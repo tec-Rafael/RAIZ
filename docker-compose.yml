@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ai_usage
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports: ["5433:5432"]
+    volumes:
+      - raiz_postgres_data:/var/lib/postgresql/data
+      - ./database/001_ai_usage.sql:/docker-entrypoint-initdb.d/001_ai_usage.sql:ro
+      - ./database/002-gerente.sql:/docker-entrypoint-initdb.d/002-gerente.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d ai_usage"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres: {condition: service_healthy}
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ai_usage
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    ports: ["8080:8080"]
+volumes:
+  raiz_postgres_data:
