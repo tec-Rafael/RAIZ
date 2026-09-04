@@ -1,0 +1,33 @@
+<div class="divConteudoLogin">
+        <div class="divFormLogin">
+            <div class="divImgLogoLogin">
+                <img src="/public/img/logo2.png" class="imgLogoLogin">
+            </div>
+            <p>Analisando a IA na raiz da sua empresa.</p>
+            <form id="formLoginUsuario"  method="post">
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="text"name="email" class="form-control" id="inputEmailLogin">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Senha</label>
+                    <label class="esqueciSenha">Esqueci minha senha</label>
+                    <div class="input-group">
+                        <input type="password" name="senha" class="form-control" id="inputSenhaLogin">
+
+                        <a class="btn btn-outline-secondary" onclick="alternarOlho()" id="toggleSenha">
+                            <i class="bi bi-eye" id="iconeOlho"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="divBtn">
+                    <button type="button" onclick="realizarLoginUsuario()" class="btn btn-success btnLoginPlataforma">Entrar na plataforma</button>
+                </div>
+            </form>
+            <hr>
+        </div>
+
+    </div>
+
+
+    <script src="/public/js/script.js"></script>

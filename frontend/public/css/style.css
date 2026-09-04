@@ -1,0 +1,150 @@
+    * {
+        padding: 0;
+        margin: 0;
+    }
+
+    .divConteudoLogin {
+        background-image: url('/public/img/arvore2.jfif');
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+        width: 100vw;
+        height: 100vh;
+        padding: 10px;
+        display: grid;
+        place-items: center;
+    }
+
+    .divFormLogin {
+        width: 100%;
+        max-width: 350px;
+        background-color: #ffffffdb;
+        backdrop-filter: blur(3px);
+        padding: 20px;
+        border-radius: 20px;
+        margin: 0;
+        color: #000;
+    }
+
+    .divFormLogin h3,
+    .divFormLogin p {
+        text-align: center;
+    }
+
+    .divBtn {
+        text-align: center;
+    }
+
+    .btnLoginPlataforma {
+        background-color: #1e3d2b;
+        padding: 10px 30px;
+    }
+
+    .esqueciSenha {
+        color: #d91212;
+        font-size: 13px;
+        margin-left: 45%;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .linkLogin {
+        color: #000;
+        font-size: 13px;
+        display: block;
+        text-align: center;
+    }
+
+    .divImgLogoLogin {
+        width: 150px;
+        align-items: center;
+        margin: 0 auto;
+    }
+
+    .imgLogoLogin {
+        max-width: 100%;
+    }
+
+    .menuLateral {
+        position: fixed;
+        top: 0;
+        left: 0;
+
+        width: 80px;
+        height: 100vh;
+
+        background-color: #1e3d2b;
+        text-align: center;
+        color: #fff;
+
+        z-index: 1000;
+    }
+
+    .menuLateral hr {
+        margin: 0;
+    }
+
+    .btnMenuNavbar {
+        font-size: 35px;
+        cursor: pointer;
+    }
+
+    .divConteudo {
+        margin-left: 80px;
+        width: calc(100% - 80px);
+    }
+
+
+
+    .divImgPerfil {
+        width: 100px;
+        height: 100px;
+        display: inline-block;
+    }
+
+    .divImgPerfil img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: cover;
+    }
+
+    .divCabecalhoPerfil {
+        display: inline-block;
+        top: 15%;
+        position: absolute;
+    }
+
+    .divCabecalhoPerfil p {
+        margin: 2px;
+    }
+
+    .btnEditarPerfil {
+        padding: 5px 20px;
+    }
+
+    .iconIaPaginaPerfil {
+        font-size: 50px;
+    }
+
+    @media (max-width: 767px) {
+        .menuLateral {
+            width: 60px;
+        }
+
+        .btnMenuNavbar {
+            font-size: 30px;
+        }
+
+        .divConteudo {
+            margin-left: 60px;
+            width: calc(100% - 60px);
+
+        }
+
+        .divCabecalhoPerfil {
+            position: static;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        
+    }

@@ -1,0 +1,71 @@
+<div class="container py-4">
+	<h1>Cadastrar funcionário</h1>
+
+	<form id="formCriar">
+		<div class="mb-3">
+			<label class="form-label">ID do gestor responsável</label>
+			<input type="text" class="form-control" name="gestorId" required>
+		</div>
+		<div class="mb-3">
+			<label class="form-label">Nome</label>
+			<input type="text" class="form-control" name="nome" required>
+		</div>
+		<div class="mb-3">
+			<label class="form-label">E-mail</label>
+			<input type="email" class="form-control" name="email" required>
+		</div>
+		<div class="mb-3">
+			<label class="form-label">Senha</label>
+			<input type="password" class="form-control" name="senha" minlength="6" required>
+		</div>
+		<div class="mb-3">
+			<label class="form-label">Posição</label>
+			<select class="form-control" name="posicao">
+				<option value="COLABORADOR" selected>Colaborador</option>
+				<option value="GESTOR">Gestor</option>
+			</select>
+		</div>
+		<div class="mb-3">
+			<label class="form-label">Cargo</label>
+			<input type="text" class="form-control" name="jobRole">
+		</div>
+		<div class="mb-3">
+			<label class="form-label">Senioridade</label>
+			<input type="text" class="form-control" name="seniority">
+		</div>
+		<button type="submit" class="btn btn-success">Cadastrar</button>
+	</form>
+
+	<div id="mensagem" class="mt-3"></div>
+</div>
+
+<script>
+	document.getElementById("formCriar").addEventListener("submit", async (evento) => {
+		evento.preventDefault();
+
+		const dados = Object.fromEntries(new FormData(evento.target).entries());
+		const mensagem = document.getElementById("mensagem");
+
+		try {
+			const resposta = await fetch("/api/funcionario/criar", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(dados)
+			});
+
+			const corpo = await resposta.json();
+
+			if (resposta.ok) {
+				mensagem.className = "alert alert-success";
+				mensagem.textContent = "Funcionário cadastrado com o ID " + corpo.employeeId;
+				evento.target.reset();
+			} else {
+				mensagem.className = "alert alert-danger";
+				mensagem.textContent = typeof corpo === "string" ? corpo : (corpo.message || "Erro ao cadastrar");
+			}
+		} catch (erro) {
+			mensagem.className = "alert alert-danger";
+			mensagem.textContent = "Erro de comunicação: " + erro.message;
+		}
+	});
+</script>
