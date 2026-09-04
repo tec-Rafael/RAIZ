@@ -1,0 +1,12 @@
+br\com\raiz\usuario\service\FuncionarioService.class
+br\com\raiz\usuario\domain\Posicao.class
+br\com\raiz\usuario\dto\FuncionarioDto.class
+br\com\raiz\usuario\dto\FuncionarioDto$LoginRequest.class
+br\com\raiz\usuario\dto\FuncionarioDto$Response.class
+br\com\raiz\usuario\domain\Funcionario.class
+br\com\raiz\usuario\dto\FuncionarioDto$LoginResponse.class
+br\com\raiz\usuario\repository\FuncionarioRepository.class
+br\com\raiz\usuario\dto\FuncionarioDto$CriarRequest.class
+br\com\raiz\usuario\domain\PosicaoConverter.class
+br\com\raiz\RootApplication.class
+br\com\raiz\usuario\controller\FuncionarioController.class
