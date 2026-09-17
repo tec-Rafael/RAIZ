@@ -15,4 +15,11 @@ router.get("/perfil", wrap(async (req, res) => {
 	res.render("index/configurarPerfil", { titulo: "Perfil" });
 }));
 
+router.get("/dashboard", wrap(async (req, res) => {
+  res.render("dashboard/index", {
+    titulo: "Dashboard"
+  });
+}));
+
+
 module.exports = router;
