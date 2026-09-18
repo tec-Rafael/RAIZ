@@ -33,7 +33,7 @@ public class UtilizacaoIA {
     @Column(name = "model_id", length = 64)
     private String modelId;
 
-    @Column(length = 255)
+    @Column(name = "application", length = 255)
     private String application;
 
     @Column(name = "request_count")
@@ -61,23 +61,11 @@ public class UtilizacaoIA {
         // exigido pelo JPA
     }
 
-    public UtilizacaoIA(
-            String usageId,
-            LocalDateTime timestamp,
-            String employeeId,
-            String companyId,
-            String departmentId,
-            String aiToolId,
-            String modelId,
-            String application,
-            Integer requestCount,
-            Integer inputTokens,
-            Integer outputTokens,
-            Long latencyMs,
-            String requestStatus,
-            String projectId,
-            String costCenter) {
-
+    public UtilizacaoIA(String usageId, LocalDateTime timestamp, String employeeId,
+                        String companyId, String departmentId, String aiToolId,
+                        String modelId, String application, Integer requestCount,
+                        Integer inputTokens, Integer outputTokens, Long latencyMs,
+                        String requestStatus, String projectId, String costCenter) {
         this.usageId = usageId;
         this.timestamp = timestamp;
         this.employeeId = employeeId;
