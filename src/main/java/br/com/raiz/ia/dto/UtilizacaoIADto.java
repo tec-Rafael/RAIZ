@@ -53,7 +53,7 @@ public final class UtilizacaoIADto {
             Integer requestCount,
             Integer inputTokens,
             Integer outputTokens,
-            Long latencyMs,
+            Double latencyMs,
             String requestStatus,
             String projectId,
             String costCenter

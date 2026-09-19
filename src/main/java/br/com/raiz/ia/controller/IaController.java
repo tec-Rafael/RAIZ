@@ -20,8 +20,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -69,8 +72,20 @@ public class IaController {
                     content = @Content(schema = @Schema(implementation = Response.class))
             )
     })
-    public List<Response> listar() {
-        return service.listar();
+    public Slice<Response> listar(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+
+        int paginaSegura = Math.max(page, 0);
+        int tamanhoSeguro = Math.min(Math.max(size, 1), 100);
+
+        Pageable pageable = PageRequest.of(
+                paginaSegura,
+                tamanhoSeguro,
+                Sort.by(Sort.Direction.DESC, "timestamp")
+        );
+
+        return service.listar(pageable);
     }
 
     @GetMapping("/buscar/{id}")

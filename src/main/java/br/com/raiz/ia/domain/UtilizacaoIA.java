@@ -46,7 +46,7 @@ public class UtilizacaoIA {
     private Integer outputTokens;
 
     @Column(name = "latency_ms")
-    private Long latencyMs;
+    private Double latencyMs;
 
     @Column(name = "request_status", length = 100)
     private String requestStatus;
@@ -64,7 +64,7 @@ public class UtilizacaoIA {
     public UtilizacaoIA(String usageId, LocalDateTime timestamp, String employeeId,
                         String companyId, String departmentId, String aiToolId,
                         String modelId, String application, Integer requestCount,
-                        Integer inputTokens, Integer outputTokens, Long latencyMs,
+                        Integer inputTokens, Integer outputTokens, Double latencyMs,
                         String requestStatus, String projectId, String costCenter) {
         this.usageId = usageId;
         this.timestamp = timestamp;
@@ -127,7 +127,7 @@ public class UtilizacaoIA {
         return outputTokens;
     }
 
-    public Long getLatencyMs() {
+    public Double getLatencyMs() {
         return latencyMs;
     }
 

@@ -9,8 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Regras de negócio do módulo de utilização de IA.
@@ -29,9 +29,11 @@ public class UtilizacaoIAService {
     }
 
     @Transactional(readOnly = true)
-    public List<Response> listar() {
-        return repository.findAll().stream().map(this::toResponse).toList();
+    public Slice<Response> listar(Pageable pageable) {
+        return repository.findAll(pageable)
+                .map(this::toResponse);
     }
+
 
     @Transactional(readOnly = true)
     public Response buscarPorId(String id) {
@@ -65,11 +67,14 @@ public class UtilizacaoIAService {
                 request.requestCount(),
                 request.inputTokens(),
                 request.outputTokens(),
-                request.latencyMs(),
+                request.latencyMs() == null
+                        ? null
+                        : request.latencyMs().doubleValue(),
                 request.requestStatus(),
                 request.projectId(),
                 request.costCenter()
         );
+
 
         try {
             return toResponse(repository.save(nova));
