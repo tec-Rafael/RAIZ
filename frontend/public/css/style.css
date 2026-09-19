@@ -14,9 +14,10 @@
         margin: 0;
     }
 
-    /* ==================== Landing page (simples, sem CSS complexo por enquanto) ====================
+    /* ==================== Landing page ====================
        Escopado em .landingPage (e não em body) para não afetar as demais páginas do site.
-    ==================================================================================================== */
+       Usa componentes do Bootstrap (navbar, container, btn) + a paleta oficial do projeto.
+    ========================================================================================= */
 
     .landingPage {
         min-height: 100vh;
@@ -25,121 +26,129 @@
         font-family: Arial, Helvetica, sans-serif;
     }
 
-    .landingHeader {
+    .landingNavbar {
+        background-color: var(--color-amazon);
+        padding: 12px 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .landingNavbar__brand {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 16px;
-        padding: 16px 32px;
-        background-color: var(--color-amazon);
+        gap: 10px;
         color: #fff;
-    }
-
-    .landingHeader__logoText {
-        color: #fff;
-        font-size: 24px;
         font-weight: bold;
+        font-size: 20px;
         text-decoration: none;
     }
 
-    .landingHeader__nav {
-        display: flex;
-        gap: 24px;
-        flex-wrap: wrap;
-    }
-
-    .landingHeader__nav a {
+    .landingNavbar__brand:hover {
         color: #fff;
-        text-decoration: none;
     }
 
-    .landingHeader__nav a:hover {
-        text-decoration: underline;
+    .landingNavbar__logo {
+        height: 56px;
+        width: 56px;
+        object-fit: contain;
     }
 
-    .landingHeader__login {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
+    .landingNavbar .nav-link {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
     }
 
-    .btnLoginHeader {
-        padding: 8px 16px;
-        border-radius: 6px;
-        border: 1px solid #fff;
-        color: #fff;
-        text-decoration: none;
-        font-size: 14px;
-        white-space: nowrap;
+    .landingNavbar .nav-link:hover {
+        color: var(--color-cannoli-cream);
     }
 
-    .btnLoginHeader--usuario {
-        background-color: transparent;
-    }
-
-    .btnLoginHeader--admin {
+    .landingBtnAdmin {
         background-color: var(--color-raspberry);
         border-color: var(--color-raspberry);
+        color: #fff;
     }
 
-    .landingSection {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 64px 24px;
-        text-align: center;
+    .landingBtnAdmin:hover {
+        background-color: #b8264f;
+        border-color: #b8264f;
+        color: #fff;
+    }
+
+    .landingHero {
+        padding-top: 56px;
+        background: linear-gradient(180deg, rgba(30, 115, 73, 0.08), transparent 70%);
     }
 
     .landingHero h1 {
-        font-size: 40px;
         color: var(--color-amazon);
-        margin-bottom: 16px;
+    }
+
+    .landingHero__text {
+        max-width: 700px;
+        color: #3f3f3f;
+    }
+
+    .landingSection {
+        padding: 72px 0;
+    }
+
+    .landingSection--alt {
+        background-color: #ffffff;
     }
 
     .landingSection h2 {
-        font-size: 28px;
         color: var(--color-amazon);
-        margin-bottom: 16px;
+        font-weight: bold;
+        margin-bottom: 20px;
     }
 
-    .landingSection p {
-        font-size: 16px;
-        line-height: 1.6;
+    .landingSection__text {
+        max-width: 700px;
+        color: #3f3f3f;
+        font-size: 17px;
+        line-height: 1.7;
     }
 
     .landingDashboardPlaceholder {
         background-color: #fff;
-        border: 2px dashed #ccc;
-        border-radius: 12px;
-        padding: 80px 24px;
-        color: #888;
-        font-size: 18px;
+        border: 2px dashed #cfc9b8;
+        border-radius: 16px;
+        padding: 64px 24px;
+        max-width: 600px;
+        color: #9a9a8c;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
     }
 
-    .landingPlaceholderText {
-        color: #888;
-        font-style: italic;
+    .landingDashboardPlaceholder__icon {
+        font-size: 48px;
     }
 
     .landingCta {
-        padding-bottom: 96px;
-    }
-
-    .btnCadastroEmpresa {
-        display: inline-block;
         background-color: var(--color-amazon);
         color: #fff;
-        padding: 14px 32px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-size: 18px;
+        padding: 80px 0;
     }
 
-    @media (max-width: 767px) {
-        .landingHeader {
-            flex-direction: column;
-            align-items: flex-start;
-        }
+    .landingCta h2 {
+        color: #fff;
+        margin-bottom: 24px;
+    }
+
+    .landingBtnCta {
+        background-color: var(--color-raspberry);
+        border-color: var(--color-raspberry);
+        color: #fff;
+        padding: 14px 40px;
+        font-size: 18px;
+        border-radius: 8px;
+    }
+
+    .landingBtnCta:hover {
+        background-color: #b8264f;
+        border-color: #b8264f;
+        color: #fff;
     }
 
     .divConteudoLogin {
@@ -180,7 +189,7 @@
     }
 
     .esqueciSenha {
-        color: #d91212;
+        color: var(--color-raspberry);
         font-size: 13px;
         margin-left: 45%;
         cursor: pointer;
