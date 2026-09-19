@@ -1,8 +1,60 @@
-<h1>Eu sou a página index!</h1>
+<div class="landingPage">
+	<header class="landingHeader">
+		<div class="landingHeader__logo">
+			<!-- TODO: substituir por <img> com a logo do rAIz quando ela estiver pronta -->
+			<a href="/" class="landingHeader__logoText">rAIz</a>
+		</div>
 
-<p>Landing page do projeto 😅</p>
+		<nav class="landingHeader__nav">
+			<a href="#hero">Início</a>
+			<a href="#ideia">O Projeto</a>
+			<a href="#dashboard">Dashboard</a>
+			<a href="#sobre">Sobre nós</a>
+		</nav>
 
+		<div class="landingHeader__login">
+			<a href="/login" class="btnLoginHeader btnLoginHeader--usuario">Login</a>
+			<a href="/login" class="btnLoginHeader btnLoginHeader--admin">Login Admin</a>
+		</div>
+	</header>
 
-<p>
-	<img src="/public/img/rafarofas.img" alt="Emoji 😊" />
-</p>
+	<main>
+		<section id="hero" class="landingSection landingHero">
+			<h1>Projeto RAIZ</h1>
+			<p>
+				Imagine visualizar e ter uma governança maior sobre como o seu dinheiro tem sido gasto dentro da empresa.
+				Aqui nós oferecemos uma plataforma de governança que analisa a performance de seus funcionários com suas IAs.
+			</p>
+		</section>
+
+		<section id="ideia" class="landingSection">
+			<h2>O que é o Projeto RAIZ</h2>
+			<p>
+				Além de controlar o uso de IA dentro da empresa, o RAIZ gera recompensas para os funcionários que usam as
+				ferramentas de IA com eficiência e bom uso, transformando dados de utilização em indicadores claros de
+				governança e desempenho.
+			</p>
+		</section>
+
+		<section id="dashboard" class="landingSection">
+			<h2>Veja como fica o seu dashboard</h2>
+
+			<!-- TODO: substituir pelo print/mockup real do dashboard -->
+			<div class="landingDashboardPlaceholder">
+				[Print do dashboard aqui]
+			</div>
+		</section>
+
+		<section id="sobre" class="landingSection">
+			<h2>Sobre nós</h2>
+
+			<!-- TODO: definir o texto real da seção Sobre Nós -->
+			<p class="landingPlaceholderText">[Sobre nós — texto a definir]</p>
+		</section>
+
+		<section id="cadastro" class="landingSection landingCta">
+			<!-- TODO: definir a rota real de cadastro de empresa; o backend ainda não tem esse fluxo -->
+			<a href="#" class="btnCadastroEmpresa">Cadastre sua empresa já</a>
+		</section>
+	</main>
+</div>

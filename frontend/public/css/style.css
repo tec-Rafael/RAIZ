@@ -1,6 +1,145 @@
+    /* ==================== Paleta oficial do projeto (Pantone) ====================
+       Cannoli Cream — Pantone 11-4302 TCX — fundo
+       Amazon        — Pantone 18-6024 TCX — cor primária (verde escuro)
+       Raspberry     — Pantone 18-1754 TCX — cor de destaque
+    ================================================================================ */
+    :root {
+        --color-cannoli-cream: #F1F0E2;
+        --color-amazon: #1E7349;
+        --color-raspberry: #D32E5E;
+    }
+
     * {
         padding: 0;
         margin: 0;
+    }
+
+    /* ==================== Landing page (simples, sem CSS complexo por enquanto) ====================
+       Escopado em .landingPage (e não em body) para não afetar as demais páginas do site.
+    ==================================================================================================== */
+
+    .landingPage {
+        min-height: 100vh;
+        background-color: var(--color-cannoli-cream);
+        color: #1e1e1e;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .landingHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding: 16px 32px;
+        background-color: var(--color-amazon);
+        color: #fff;
+    }
+
+    .landingHeader__logoText {
+        color: #fff;
+        font-size: 24px;
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    .landingHeader__nav {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .landingHeader__nav a {
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .landingHeader__nav a:hover {
+        text-decoration: underline;
+    }
+
+    .landingHeader__login {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btnLoginHeader {
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: 1px solid #fff;
+        color: #fff;
+        text-decoration: none;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .btnLoginHeader--usuario {
+        background-color: transparent;
+    }
+
+    .btnLoginHeader--admin {
+        background-color: var(--color-raspberry);
+        border-color: var(--color-raspberry);
+    }
+
+    .landingSection {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 64px 24px;
+        text-align: center;
+    }
+
+    .landingHero h1 {
+        font-size: 40px;
+        color: var(--color-amazon);
+        margin-bottom: 16px;
+    }
+
+    .landingSection h2 {
+        font-size: 28px;
+        color: var(--color-amazon);
+        margin-bottom: 16px;
+    }
+
+    .landingSection p {
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    .landingDashboardPlaceholder {
+        background-color: #fff;
+        border: 2px dashed #ccc;
+        border-radius: 12px;
+        padding: 80px 24px;
+        color: #888;
+        font-size: 18px;
+    }
+
+    .landingPlaceholderText {
+        color: #888;
+        font-style: italic;
+    }
+
+    .landingCta {
+        padding-bottom: 96px;
+    }
+
+    .btnCadastroEmpresa {
+        display: inline-block;
+        background-color: var(--color-amazon);
+        color: #fff;
+        padding: 14px 32px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 18px;
+    }
+
+    @media (max-width: 767px) {
+        .landingHeader {
+            flex-direction: column;
+            align-items: flex-start;
+        }
     }
 
     .divConteudoLogin {
