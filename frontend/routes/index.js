@@ -4,22 +4,26 @@ const wrap = require("express-async-error-wrapper");
 const router = express.Router();
 
 router.get("/", wrap(async (req, res) => {
-	res.render("index/index", { titulo: "Início" });
+  res.render("index/index", { titulo: "Início" });
 }));
 
 router.get("/login", wrap(async (req, res) => {
-	res.render("index/login", { titulo: "Login" });
+  res.render("index/login", { titulo: "Login" });
 }));
 
 router.get("/perfil", wrap(async (req, res) => {
-	res.render("index/configurarPerfil", { titulo: "Perfil" });
+  res.render("index/configurarPerfil", { titulo: "Perfil" });
 }));
 
 router.get("/dashboard", wrap(async (req, res) => {
-  res.render("dashboard/index", {
-    titulo: "Dashboard"
-  });
+  res.render("dashboard/index", {titulo: "Dashboard" });
+}));
+
+router.get("/sobre-nos", wrap(async (req, res) => {
+  res.render("index/sobre", { titulo: "Sobre Nós" });
 }));
 
 
-module.exports = router;
+
+
+  module.exports = router;
