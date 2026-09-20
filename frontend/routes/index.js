@@ -19,11 +19,8 @@ router.get("/dashboard", wrap(async (req, res) => {
   res.render("dashboard/index", {titulo: "Dashboard" });
 }));
 
-router.get("/sobre-nos", wrap(async (req, res) => {
+router.get("/sobre", wrap(async (req, res) => {
   res.render("index/sobre", { titulo: "Sobre Nós" });
 }));
 
-
-
-
-  module.exports = router;
+module.exports = router;

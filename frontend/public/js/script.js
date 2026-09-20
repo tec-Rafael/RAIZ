@@ -48,7 +48,7 @@ async function realizarLoginUsuario() {
             return;
         }
 
-        window.location.href = "/perfil";
+        window.location.href = "/";
 
     } catch (ex) {
         alert("Ocorreu um erro de rede ao fazer login " + ex.message)

@@ -274,13 +274,60 @@
         font-size: 50px;
     }
 
+    .divFundoHomePage {
+        width: 100%;
+        min-height: 100dvh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-image: url("/public/img/fundoVerao8.webp");
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        box-sizing: border-box;
+    }
+
+    .arvoreHomePage {
+
+        position: absolute;
+        left: 50%;
+        bottom: -12px;
+
+        width: clamp(100px, 30vw, 320px);
+        height: auto;
+
+        transform: translateX(-50%);
+        z-index: 2;
+        pointer-events: none;
+
+        image-rendering: pixelated;
+        shape-rendering: crispEdges;
+
+    }
+
+    .menuLateralHomePage {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 87px;
+        background-color: #d8d8d8d1;
+        height: 12vh;
+        text-align: center;
+        color: #000000;
+        z-index: 1000;
+        border-radius: 0px 0px 70px 0px;
+    }
+
+
+
+
     @media (max-width: 767px) {
         .menuLateral {
             width: 60px;
         }
 
         .btnMenuNavbar {
-            font-size: 30px;
+            font-size: 40px;
         }
 
         .divConteudo {
@@ -294,5 +341,9 @@
             display: inline-block;
             margin-left: 10px;
         }
-        
+
+        .menuLateralHomePage {
+            width: 87px;
+        }
+
     }
