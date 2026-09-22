@@ -1,6 +1,7 @@
 package br.com.raiz.ia.controller;
 
 import br.com.raiz.ia.dto.UtilizacaoIADto.CriarRequest;
+import br.com.raiz.ia.dto.UtilizacaoIADto.Destaques;
 import br.com.raiz.ia.dto.UtilizacaoIADto.Response;
 import br.com.raiz.ia.service.UtilizacaoIAService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -86,6 +87,29 @@ public class IaController {
         );
 
         return service.listar(pageable);
+    }
+
+    @GetMapping("/destaques")
+    @Operation(
+            summary = "Destaques de uso de IA (top N)",
+            description = "Retorna apenas as IAs mais e menos usadas e os funcionários que mais e menos usam IA, "
+                    + "já calculados no banco. Uso = soma de request_count. "
+                    + "Use companyId para filtrar por empresa (opcional)."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Destaques retornados com sucesso",
+                    content = @Content(schema = @Schema(implementation = Destaques.class))
+            )
+    })
+    public Destaques destaques(
+            @RequestParam(required = false) String companyId,
+            @RequestParam(defaultValue = "5") int limite) {
+
+        int limiteSeguro = Math.min(Math.max(limite, 1), 20);
+
+        return service.destaques(companyId, limiteSeguro);
     }
 
     @GetMapping("/buscar/{id}")
