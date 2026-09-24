@@ -2,6 +2,7 @@ package br.com.raiz.ia.service;
 
 import br.com.raiz.ia.domain.UtilizacaoIA;
 import br.com.raiz.ia.dto.UtilizacaoIADto.CriarRequest;
+import br.com.raiz.ia.dto.UtilizacaoIADto.Destaques;
 import br.com.raiz.ia.dto.UtilizacaoIADto.Response;
 import br.com.raiz.ia.repository.UtilizacaoIARepository;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,6 +35,27 @@ public class UtilizacaoIAService {
                 .map(this::toResponse);
     }
 
+
+    /**
+     * Devolve só o que importa para o dashboard: as IAs mais/menos usadas e os
+     * funcionários que mais/menos usam IA (top N de cada), mais quantos
+     * funcionários ativos nunca usaram. Tudo agregado no banco.
+     *
+     * @param companyId opcional; vazio/nulo = todas as empresas
+     * @param limite    quantos itens por ranking
+     */
+    @Transactional(readOnly = true)
+    public Destaques destaques(String companyId, int limite) {
+        String empresa = (companyId == null || companyId.isBlank()) ? null : companyId.trim();
+
+        return new Destaques(
+                repository.ferramentasMaisUsadas(empresa, limite),
+                repository.ferramentasMenosUsadas(empresa, limite),
+                repository.funcionariosQueMaisUsam(empresa, limite),
+                repository.funcionariosQueMenosUsam(empresa, limite),
+                repository.contarFuncionariosSemUso(empresa)
+        );
+    }
 
     @Transactional(readOnly = true)
     public Response buscarPorId(String id) {
