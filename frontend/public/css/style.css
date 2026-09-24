@@ -296,3 +296,473 @@
         }
         
     }
+
+    /* ==================== Dashboard (/dashboard) ====================
+       Escopado em .dashboardPagina para não afetar as demais páginas do site.
+       Usa a paleta oficial (--color-*) definida no topo deste arquivo.
+    ================================================================================= */
+
+    .dashboardPagina {
+        --dash-fundo: var(--color-cannoli-cream, #F1F0E2);
+        --dash-primaria: var(--color-amazon, #1E7349);
+        --dash-destaque: var(--color-raspberry, #D32E5E);
+        --dash-card: #ffffff;
+        --dash-texto: #1e1e1e;
+        --dash-texto-secundario: #5c5c55;
+        --dash-borda: #e3e0d2;
+        --dash-sombra: 0 2px 10px rgba(30, 30, 30, 0.06);
+        --dash-raio: 16px;
+
+        min-height: 100vh;
+        background-color: var(--dash-fundo);
+        color: var(--dash-texto);
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .dashConteudoPagina {
+        padding: 24px 24px 48px;
+    }
+
+    /* ---------- Topo ---------- */
+
+    .dashTopo {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .dashTopo__titulo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .dashTopo__logo {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+
+    .dashTopo h1 {
+        font-size: 26px;
+        font-weight: bold;
+        color: var(--dash-primaria);
+        margin: 0;
+    }
+
+    .dashTopo__contexto {
+        margin: 2px 0 0;
+        color: var(--dash-texto-secundario);
+        font-size: 14px;
+    }
+
+    .dashTopo__contexto strong {
+        color: var(--dash-texto);
+    }
+
+    /* ---------- Seletor de simulação ---------- */
+
+    .dashSimulacao {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        background-color: var(--dash-card);
+        border: 1px solid var(--dash-borda);
+        border-left: 4px solid var(--dash-destaque);
+        border-radius: 12px;
+        padding: 10px 14px;
+        box-shadow: var(--dash-sombra);
+    }
+
+    .dashSimulacao__selo {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--dash-destaque);
+    }
+
+    .dashSimulacao__campo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dashSimulacao__campo .form-label {
+        margin: 0;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .dashSimulacao__usuario {
+        font-size: 13px;
+        color: var(--dash-texto-secundario);
+    }
+
+    /* ---------- Aviso ---------- */
+
+    .dashAviso {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--dash-texto-secundario);
+    }
+
+    /* ---------- Cards ---------- */
+
+    .dashCard {
+        background-color: var(--dash-card);
+        border-radius: var(--dash-raio);
+        box-shadow: var(--dash-sombra);
+        padding: 20px;
+        height: 100%;
+    }
+
+    .dashCard__titulo {
+        font-size: 16px;
+        font-weight: bold;
+        color: var(--dash-texto);
+        margin: 0 0 2px;
+    }
+
+    .dashCard__subtitulo {
+        font-size: 13px;
+        color: var(--dash-texto-secundario);
+        margin: 0 0 12px;
+    }
+
+    /* ---------- Filtros ---------- */
+
+    .dashFiltros {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 12px 16px;
+        padding: 14px 20px;
+        margin-bottom: 16px;
+        height: auto;
+    }
+
+    .dashFiltros__item {
+        display: flex;
+        flex-direction: column;
+        min-width: 170px;
+    }
+
+    .dashFiltros__item .form-label {
+        font-size: 12px;
+        font-weight: bold;
+        color: var(--dash-texto-secundario);
+        margin-bottom: 4px;
+    }
+
+    .dashboardPagina .form-select:focus {
+        border-color: var(--dash-primaria);
+        box-shadow: 0 0 0 0.2rem rgba(30, 115, 73, 0.2);
+    }
+
+    /* ---------- KPIs ---------- */
+
+    .dashKpi__topo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--dash-texto-secundario);
+    }
+
+    .dashKpi__topo .bi {
+        color: var(--dash-primaria);
+        font-size: 18px;
+    }
+
+    .dashKpi__valor {
+        font-size: 30px;
+        font-weight: bold;
+        margin-top: 6px;
+        line-height: 1.1;
+    }
+
+    .dashKpi__valor small {
+        font-size: 14px;
+        font-weight: normal;
+        color: var(--dash-texto-secundario);
+        margin-left: 2px;
+    }
+
+    .dashKpi__detalhe {
+        font-size: 13px;
+        color: var(--dash-texto-secundario);
+        margin-top: 6px;
+    }
+
+    .dashKpi__variacao {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .dashSelo {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: bold;
+        color: var(--dash-texto-secundario);
+        background-color: var(--dash-fundo);
+        border-radius: 999px;
+        padding: 2px 8px;
+        cursor: help;
+    }
+
+    /* ---------- Gráficos ---------- */
+
+    .dashGrafico {
+        position: relative;
+        height: 240px;
+    }
+
+    .dashGrafico--alto {
+        height: 280px;
+    }
+
+    .dashGrafico__erro {
+        font-size: 13px;
+        color: var(--dash-texto-secundario);
+        margin: 0;
+    }
+
+    /* ---------- Árvore ---------- */
+
+    .dashArvore {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .dashArvore .dashCard__titulo {
+        align-self: flex-start;
+    }
+
+    /* Espaço reservado para a arte da árvore de cada estágio. */
+    .dashArvore__imagem {
+        display: grid;
+        place-items: center;
+        width: 140px;
+        height: 140px;
+        margin: 12px 0;
+        border-radius: 50%;
+        background-color: var(--dash-fundo);
+        color: var(--dash-primaria);
+        font-size: 72px;
+    }
+
+    .dashArvore__nivel {
+        font-size: 18px;
+        font-weight: bold;
+        color: var(--dash-primaria);
+    }
+
+    .dashArvore__detalhe {
+        font-size: 13px;
+        color: var(--dash-texto-secundario);
+        margin-top: 4px;
+    }
+
+    /* ---------- Metas ---------- */
+
+    .dashMetas {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .dashMeta__topo {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+
+    .dashMeta__valor {
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .dashMeta .progress {
+        height: 8px;
+        background-color: var(--dash-fundo);
+        border-radius: 999px;
+    }
+
+    .dashMeta__barra {
+        background-color: var(--dash-primaria);
+        border-radius: 999px;
+    }
+
+    .dashMeta__unidade {
+        font-size: 12px;
+        color: var(--dash-texto-secundario);
+        margin-top: 4px;
+    }
+
+    /* ---------- Conquistas ---------- */
+
+    .dashConquistas {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 12px;
+    }
+
+    .dashConquista {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 4px;
+        padding: 12px 8px;
+        border-radius: 12px;
+        background-color: var(--dash-fundo);
+    }
+
+    .dashConquista__icone {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--dash-primaria);
+        color: #fff;
+        font-size: 18px;
+    }
+
+    .dashConquista__titulo {
+        font-size: 13px;
+        font-weight: bold;
+        line-height: 1.2;
+    }
+
+    .dashConquista__estado {
+        font-size: 11px;
+        color: var(--dash-texto-secundario);
+    }
+
+    .dashConquista--bloqueada .dashConquista__icone {
+        background-color: #d6d3c6;
+        color: var(--dash-texto-secundario);
+    }
+
+    .dashConquista--bloqueada .dashConquista__titulo {
+        color: var(--dash-texto-secundario);
+    }
+
+    /* ---------- Tabelas ---------- */
+
+    .dashTabela {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .dashTabela th {
+        font-size: 12px;
+        color: var(--dash-texto-secundario);
+        font-weight: bold;
+        border-bottom-color: var(--dash-borda);
+        white-space: nowrap;
+        position: relative; /* mantém o texto .visually-hidden dentro da área rolável da tabela */
+    }
+
+    .dashTabela td {
+        border-bottom-color: var(--dash-borda);
+    }
+
+    .dashTabela__eu td {
+        background-color: #f8f7f0;
+    }
+
+    .dashTag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: bold;
+        color: #fff;
+        background-color: var(--dash-destaque);
+        border-radius: 999px;
+        padding: 1px 8px;
+        margin-left: 4px;
+    }
+
+    .dashBtnSecundario {
+        border: 1px solid var(--dash-primaria);
+        color: var(--dash-primaria);
+        background-color: transparent;
+        white-space: nowrap;
+    }
+
+    .dashBtnSecundario:hover,
+    .dashBtnSecundario:focus-visible {
+        background-color: var(--dash-primaria);
+        color: #fff;
+    }
+
+    /* ---------- Carregando / alerta ---------- */
+
+    .dashCarregando {
+        color: var(--dash-texto-secundario);
+        font-size: 14px;
+        padding: 16px 0;
+    }
+
+    .dashAlerta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background-color: var(--dash-card);
+        border-left: 4px solid var(--dash-destaque);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: var(--dash-sombra);
+    }
+
+    /* ---------- Responsivo ---------- */
+
+    @media (max-width: 767px) {
+        .dashConteudoPagina {
+            padding: 16px 16px 32px;
+        }
+
+        .dashTopo h1 {
+            font-size: 22px;
+        }
+
+        .dashSimulacao {
+            width: 100%;
+        }
+
+        .dashFiltros__item {
+            min-width: 0;
+            flex: 1 1 140px;
+        }
+
+        .dashKpi__valor {
+            font-size: 26px;
+        }
+    }

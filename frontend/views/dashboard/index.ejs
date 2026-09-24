@@ -1,1 +1,78 @@
-<p>Página do Dash</p>
+<div class="dashboardPagina">
+
+    <div class="menuLateral">
+
+        <i class="bi bi-list btnMenuNavbar" data-bs-toggle="offcanvas" aria-controls="offcanvasWithBothOptions"
+            data-bs-target="#offcanvasWithBothOptions">
+        </i>
+
+        <hr>
+
+        <div class="offcanvas offcanvas-start" data-bs-scroll="true" tabindex="-1" id="offcanvasWithBothOptions"
+            aria-labelledby="offcanvasWithBothOptionsLabel">
+
+            <div class="offcanvas-header">
+
+                <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">
+                    Menu
+                </h5>
+
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
+                </button>
+
+            </div>
+
+            <div class="offcanvas-body">
+
+                <p><a href="funcionario/criar">Cadastrar Funcionário</a></p>
+                <p><a href="funcionario/listar">Listar Funcionário</a></p>
+                <p><a href="/dashboard">Dashboard</a></p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="container-fluid divConteudo dashConteudoPagina">
+
+        <div class="dashTopo">
+
+            <div class="dashTopo__titulo">
+                <img src="/public/img/logo.png" alt="" class="dashTopo__logo" width="44" height="44">
+                <div>
+                    <h1>Dashboard</h1>
+                    <p id="dashContexto" class="dashTopo__contexto" aria-live="polite"></p>
+                </div>
+            </div>
+
+            <!-- SIMULAÇÃO: enquanto o login não guarda o usuário, este seletor define qual perfil está "logado".
+                 Remover quando o perfil vier da sessão. -->
+            <div class="dashSimulacao">
+                <span class="dashSimulacao__selo"><i class="bi bi-cone-striped" aria-hidden="true"></i>Modo simulação</span>
+                <div class="dashSimulacao__campo">
+                    <label for="dashSimularComo" class="form-label">Simular como</label>
+                    <select id="dashSimularComo" class="form-select form-select-sm"></select>
+                </div>
+                <div class="dashSimulacao__usuario" id="dashUsuarioSimulado"></div>
+            </div>
+
+        </div>
+
+        <p class="dashAviso" role="note">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            Os dados desta página são simulados para demonstração e não representam o uso real de nenhuma pessoa ou empresa.
+        </p>
+
+        <div class="dashCard dashFiltros" id="dashFiltros" role="group" aria-label="Filtros do dashboard"></div>
+
+        <div id="dashConteudo"></div>
+
+    </div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
+<script src="/public/js/dashboard.js?v=1"></script>
