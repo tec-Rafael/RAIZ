@@ -26,6 +26,8 @@ import java.util.List;
 public interface UtilizacaoIARepository
         extends JpaRepository<UtilizacaoIA, String> {
 
+    List<UtilizacaoIA> findByEmployeeId(String employeeId);
+
     // ------------------------------------------------------------ IAs (ferramentas)
 
     @Query(nativeQuery = true, value = """
