@@ -4,9 +4,11 @@ import br.com.raiz.score.domain.Periodo;
 import br.com.raiz.score.dto.AiLiteracyScoreDto;
 import br.com.raiz.score.dto.GovernanceScoreDto;
 import br.com.raiz.score.dto.SecurityIncidentScoreDto;
+import br.com.raiz.score.dto.FinOpsScoreDto;
 import br.com.raiz.score.service.AiLiteracyService;
 import br.com.raiz.score.service.GovernanceService;
 import br.com.raiz.score.service.SecurityIncidentService;
+import br.com.raiz.score.service.FinOpsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,15 +30,18 @@ public class AiMaturityScoreController {
     private final AiLiteracyService aiLiteracyService;
     private final GovernanceService governanceService;
     private final SecurityIncidentService securityIncidentService;
+    private final FinOpsService finOpsService;
 
     public AiMaturityScoreController(
             AiLiteracyService aiLiteracyService,
             GovernanceService governanceService,
-            SecurityIncidentService securityIncidentService) {
+            SecurityIncidentService securityIncidentService,
+            FinOpsService finOpsService) {
 
         this.aiLiteracyService = aiLiteracyService;
         this.governanceService = governanceService;
         this.securityIncidentService = securityIncidentService;
+        this.finOpsService = finOpsService;
     }
 
     @GetMapping("/ai-literacy/{employeeId}")
@@ -95,5 +100,23 @@ public class AiMaturityScoreController {
         );
 
         return new SecurityIncidentScoreDto(score);
+    }
+
+    @GetMapping("/finops/{employeeId}")
+    @Operation(
+            summary = "Calcula o FinOps Score",
+            description = "Calcula o indicador de eficiência econômica do uso de IA de um funcionário para o período informado."
+    )
+    public FinOpsScoreDto calcularFinOpsScore(
+            @PathVariable String employeeId,
+            @RequestParam LocalDate inicio,
+            @RequestParam LocalDate fim) {
+
+        Periodo periodo = new Periodo(inicio, fim);
+
+        return finOpsService.calcularFinOpsScore(
+                employeeId,
+                periodo
+        );
     }
 }
