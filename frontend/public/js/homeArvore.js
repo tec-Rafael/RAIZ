@@ -1,0 +1,241 @@
+/*
+ * Árvore animada da home (tela de progresso).
+ * Mostra o cenário do nível de desempenho atual com a árvore no estágio atual.
+ * Só anima quando algo mudou desde a última visita (guardada no navegador):
+ *   - nível mudou  -> transição de cenário (melhora: a partir da árvore; piora: do céu para o chão)
+ *   - estágio subiu -> gotas de água + crescimento de baixo para cima (um estágio por vez)
+ *   - estágio caiu  -> árvore encolhendo de cima para baixo
+ * Nível e estágio vêm dos atributos data-nivel / data-estagio do canvas (valores fixos por enquanto,
+ * até o backend fornecer esses dados). Também dá para chamar window.raizArvoreHome.irPara(nivel, estagio).
+ */
+(function () {
+	"use strict";
+
+	const cv = document.getElementById("canvasArvoreHome");
+	if (!cv) return;
+	const ctx = cv.getContext("2d");
+
+	const NIVEIS = ["baixo", "medio", "alto", "excelente"];
+	const FUNDOS = { baixo: "/public/img/fundoSeca.webp", medio: "/public/img/fundoOutono.webp", alto: "/public/img/fundoPrimavera.webp", excelente: "/public/img/fundoVerao8.webp" };
+	const TOTAL_ESTAGIOS = 4;
+	const CHAVE_VISITA = "raiz.arvoreHome.ultimaVisita";
+	const BW = 576, BH = 324, W = BW * 4, H = BH * 4, K = 5;
+	const BASEX = W / 2 - 80 * K, BASEY = Math.round(H * 0.92) - 148 * K;
+	const reduzirMovimento = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	cv.width = W; cv.height = H; ctx.imageSmoothingEnabled = false;
+
+	function normalizarNivel(n) { return NIVEIS.indexOf(n) >= 0 ? n : "excelente"; }
+	function normalizarEstagio(e) { e = parseInt(e, 10); return isNaN(e) ? 1 : Math.max(1, Math.min(TOTAL_ESTAGIOS, e)); }
+
+	// ---------------------------------------------------------------- assets
+	const assets = {};
+	function carregarImagem(src) {
+		return new Promise(function (ok, erro) { const i = new Image(); i.onload = function () { ok(i); }; i.onerror = erro; i.src = src; });
+	}
+	async function carregar() {
+		const bc = document.createElement("canvas"); bc.width = BW; bc.height = BH;
+		const bx = bc.getContext("2d", { willReadFrequently: true }); bx.imageSmoothingEnabled = false;
+		const tc = document.createElement("canvas"); tc.width = tc.height = 160;
+		const tx = tc.getContext("2d", { willReadFrequently: true }); tx.imageSmoothingEnabled = false;
+		for (const n of NIVEIS) {
+			const fundo = await carregarImagem(FUNDOS[n]);
+			bx.clearRect(0, 0, BW, BH); bx.drawImage(fundo, 0, 0, BW, BH);
+			const sprites = [];
+			for (let e = 1; e <= TOTAL_ESTAGIOS; e++) {
+				const img = await carregarImagem("/public/img/FramesArvore/" + n + "/arvore_estagio_" + e + "_vetorial.svg");
+				tx.clearRect(0, 0, 160, 160); tx.drawImage(img, 0, 0, 160, 160);
+				sprites.push(tx.getImageData(0, 0, 160, 160));
+			}
+			assets[n] = { fundo: fundo, fundoPx: bx.getImageData(0, 0, BW, BH), sprites: sprites };
+		}
+	}
+
+	// ---------------------------------------------------- máscaras de transição
+	const T_SOBE = new Float32Array(25600), T_DESCE = new Float32Array(25600);
+	const M_MELHORA = new Float32Array(BW * BH), M_PIORA = new Float32Array(BW * BH);
+	(function () {
+		let s = 7; const r = function () { return (s = (s * 16807) % 2147483647) / 2147483647; };
+		const g = []; for (let j = 0; j <= 20; j++) { g[j] = []; for (let i = 0; i <= 20; i++) g[j][i] = r(); }
+		for (let y = 0; y < 160; y++) for (let x = 0; x < 160; x++) {
+			const gx = x / 8, gy = y / 8, i = gx | 0, j = gy | 0, u = gx - i, v = gy - j;
+			const n = (g[j][i] * (1 - u) + g[j][i + 1] * u) * (1 - v) + (g[j + 1][i] * (1 - u) + g[j + 1][i + 1] * u) * v;
+			T_SOBE[y * 160 + x] = Math.min(1, Math.max(0, (150 - y) / 128 * 0.82 + n * 0.18 + Math.abs(x - 80) / 80 * 0.06));
+			T_DESCE[y * 160 + x] = Math.min(1, Math.max(0, (y - 20) / 130 * 0.82 + n * 0.18));
+		}
+		const gb = []; for (let j = 0; j <= 12; j++) { gb[j] = []; for (let i = 0; i <= 20; i++) gb[j][i] = r(); }
+		const B = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+		for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+			const gx = x / 32, gy = y / 32, i = gx | 0, j = gy | 0, u = gx - i, v = gy - j;
+			const n = (gb[j][i] * (1 - u) + gb[j][i + 1] * u) * (1 - v) + (gb[j + 1][i] * (1 - u) + gb[j + 1][i + 1] * u) * v;
+			const bay = (B[y & 3][x & 3] + 0.5) / 16;
+			M_MELHORA[y * BW + x] = Math.min(1, Math.hypot((x - 288) / 330, (y - 298) / 300) * 0.8 + n * 0.14 + bay * 0.06);
+			M_PIORA[y * BW + x] = Math.min(1, (y / BH) * 0.75 + n * 0.18 + bay * 0.07);
+		}
+	})();
+
+	// ---------------------------------------------------------------- estado
+	const estado = { nivel: "excelente", estagio: 1 }; // estágio 1..4
+	let fila = [];      // animações pendentes
+	let atual = null;   // animação em andamento
+	let parts = [], relampago = 0;
+
+	function salvarVisita() {
+		try { localStorage.setItem(CHAVE_VISITA, JSON.stringify({ nivel: estado.nivel, estagio: estado.estagio })); } catch (e) { /* navegador sem storage: só não lembra */ }
+	}
+	function lerVisita() {
+		try { const v = JSON.parse(localStorage.getItem(CHAVE_VISITA)); if (v && NIVEIS.indexOf(v.nivel) >= 0) return { nivel: v.nivel, estagio: normalizarEstagio(v.estagio) }; } catch (e) { }
+		return null;
+	}
+
+	// Monta a fila: primeiro a mudança de nível (no estágio antigo), depois os estágios um a um.
+	function planejar(nivel, estagio) {
+		fila = [];
+		let n = estado.nivel, e = estado.estagio;
+		if (nivel !== n) { fila.push({ tipo: "nivel", de: n, para: nivel }); n = nivel; }
+		while (e !== estagio) { const prox = e + (estagio > e ? 1 : -1); fila.push({ tipo: prox > e ? "crescer" : "encolher", de: e, para: prox }); e = prox; }
+	}
+
+	function iniciarProxima() {
+		atual = fila.shift() || null;
+		if (!atual) { salvarVisita(); return; }
+		atual.t = 0; atual.p = 0; atual.bp = 0; atual.pulo = 1; atual.fase = atual.tipo === "crescer" ? "agua" : "anim";
+		if (atual.tipo === "nivel") {
+			atual.melhora = NIVEIS.indexOf(atual.para) > NIVEIS.indexOf(atual.de);
+			estado.nivel = atual.para; // o clima já passa a ser o do nível novo
+			if (!atual.melhora) for (let i = 0; i < 14; i++) parts.push({ x: BASEX + (50 + Math.random() * 60) * K, y: BASEY + (40 + Math.random() * 50) * K, vx: (Math.random() - 0.5) * 60, vy: 60 + Math.random() * 80, g: 120, cor: ["#6b5a4b", "#4a3d34", "#8a7a60"][Math.random() * 3 | 0], z: K, vida: 2.5, folha: true });
+		}
+		if (atual.tipo === "crescer") gotas(atual.de);
+	}
+
+	function suave(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
+
+	function avancar(dt) {
+		if (!atual) return;
+		const a = atual; a.t += dt;
+		if (a.tipo === "nivel") {
+			a.bp = suave(Math.min(1, a.t / 1.9)) * 1.25;
+			a.p = suave(Math.min(1, Math.max(0, (a.t - 0.35) / 1.6))) * 1.05;
+			if (a.melhora && Math.random() < dt * 30) parts.push({ x: BASEX + (30 + Math.random() * 100) * K, y: BASEY + (150 - a.p * 130) * K, vx: (Math.random() - 0.5) * 30, vy: -60 - Math.random() * 60, cor: Math.random() < 0.5 ? "#d8ffb0" : "#fff2a8", z: K, vida: 0.9, pisca: true });
+			if (!a.melhora && Math.random() < dt * 18) parts.push({ x: BASEX + (30 + Math.random() * 100) * K, y: BASEY + (20 + a.p * 120) * K, vx: (Math.random() - 0.5) * 40, vy: 80 + Math.random() * 60, cor: "rgba(40,36,48,.8)", z: K, vida: 1.2 });
+			if (a.t > 1.95 && a.fase === "anim") { a.fase = "pulo"; a.pulo = 0; if (a.para === "baixo") relampago = 0.35; if (a.melhora) brilhos(); }
+		} else if (a.tipo === "crescer") {
+			if (a.fase === "agua" && a.t > 0.75) { a.fase = "anim"; a.t = 0; }
+			if (a.fase === "anim") { const x = Math.min(1, a.t / 1.5); a.p = suave(x) * 1.05; if (x >= 1) { a.fase = "pulo"; a.t = 0; a.pulo = 0; estado.estagio = a.para; brilhos(); } }
+		} else { // encolher
+			if (a.fase === "anim") { const x = Math.min(1, a.t / 1.3); a.p = suave(x) * 1.05; if (x >= 1) { a.fase = "pulo"; a.t = 0; a.pulo = 0; estado.estagio = a.para; } }
+		}
+		if (a.fase === "pulo") { a.pulo += dt; if (a.pulo >= 0.45) iniciarProxima(); }
+	}
+
+	// --------------------------------------------------------------- desenho
+	const spr = document.createElement("canvas"); spr.width = spr.height = 160; const sx = spr.getContext("2d");
+	const sprOut = new ImageData(160, 160);
+	const bgc = document.createElement("canvas"); bgc.width = BW; bgc.height = BH; const bgx = bgc.getContext("2d");
+	const bgOut = new ImageData(BW, BH);
+
+	function misturar(de, para, T, p, realce, o) {
+		for (let k = 0, n = T.length; k < n; k++) {
+			const i = k * 4, s = p > T[k] ? para : de;
+			if (s && s[i + 3]) {
+				o[i] = s[i]; o[i + 1] = s[i + 1]; o[i + 2] = s[i + 2]; o[i + 3] = s[i + 3];
+				if (s === para && p - T[k] < 0.03) { o[i] = Math.max(0, Math.min(255, o[i] + realce[0])); o[i + 1] = Math.max(0, Math.min(255, o[i + 1] + realce[1])); o[i + 2] = Math.max(0, Math.min(255, o[i + 2] + realce[2])); }
+			} else o[i + 3] = 0;
+		}
+	}
+
+	function desenharFundo() {
+		const a = atual;
+		if (!a || a.tipo !== "nivel" || a.bp >= 1.2) { ctx.drawImage(assets[estado.nivel].fundo, 0, 0, W, H); return; }
+		const M = a.melhora ? M_MELHORA : M_PIORA, o = bgOut.data;
+		misturar(assets[a.de].fundoPx.data, assets[a.para].fundoPx.data, M, a.bp, a.melhora ? [40, 55, 20] : [-35, -35, -20], o);
+		for (let k = 3; k < o.length; k += 4) o[k] = 255;
+		bgx.putImageData(bgOut, 0, 0); ctx.drawImage(bgc, 0, 0, W, H);
+	}
+
+	function desenharArvore() {
+		const a = atual, e = estado.estagio - 1;
+		let pulo = 1;
+		if (a && a.fase === "pulo") { const x = Math.min(1, a.pulo / 0.45); pulo = 1 + Math.sin(x * Math.PI * 2) * (a.tipo === "crescer" || a.melhora ? 0.03 : -0.02) * (1 - x); }
+		if (!a || a.fase === "agua" || a.fase === "pulo") sx.putImageData(assets[estado.nivel].sprites[e], 0, 0);
+		else if (a.tipo === "nivel") misturar(assets[a.de].sprites[e].data, assets[a.para].sprites[e].data, a.melhora ? T_SOBE : T_DESCE, a.p, a.melhora ? [60, 80, 30] : [-40, -40, -30], sprOut.data);
+		else misturar(assets[estado.nivel].sprites[a.de - 1].data, assets[estado.nivel].sprites[a.para - 1].data, a.tipo === "crescer" ? T_SOBE : T_DESCE, a.p, a.tipo === "crescer" ? [70, 70, 40] : [-35, -35, -20], sprOut.data);
+		if (a && a.fase === "anim") sx.putImageData(sprOut, 0, 0);
+		const w = 160 * K * (2 - pulo), h = 160 * K * pulo;
+		ctx.drawImage(spr, BASEX - (w - 160 * K) / 2, BASEY + 148 * K * (1 - pulo), w, h);
+	}
+
+	function px(x, y, cor, z) { ctx.fillStyle = cor; ctx.fillRect(Math.round(x / z) * z, Math.round(y / z) * z, z, z); }
+
+	function desenhar() {
+		desenharFundo(); desenharArvore();
+		for (const q of parts) {
+			if (q.pisca && Math.random() < 0.25) continue;
+			if (q.chuva) { ctx.fillStyle = q.cor; ctx.fillRect(Math.round(q.x / 4) * 4, Math.round(q.y / 4) * 4, 4, 20); continue; }
+			px(q.x, q.y, q.cor, q.z);
+			if (q.folha) px(q.x + q.z, q.y + q.z, q.cor, q.z);
+			if (q.gota) px(q.x, q.y - q.z, q.cor, q.z);
+		}
+		if (relampago > 0) { ctx.fillStyle = "rgba(225,222,255," + relampago + ")"; ctx.fillRect(0, 0, W, H); }
+	}
+
+	// ------------------------------------------------------------ partículas
+	function gotas(estagioDe) {
+		for (let i = 0; i < 7; i++) parts.push({ x: BASEX + (80 + (Math.random() - 0.5) * 26) * K, y: BASEY + (estagioDe >= 3 ? 40 : 95) * K - Math.random() * 120, vx: 0, vy: 500 + Math.random() * 200, cor: "#9fd8f0", z: K, gota: true, ateY: BASEY + 138 * K, vida: 3 });
+	}
+	function brilhos() {
+		for (let i = 0; i < 26; i++) {
+			const a = Math.random() * Math.PI * 2, r = 20 + Math.random() * 60;
+			parts.push({ x: BASEX + 80 * K + Math.cos(a) * r * K * 0.9, y: BASEY + (150 - estado.estagio * 28) * K + Math.sin(a) * r * K * 0.5, vx: 0, vy: -30 - Math.random() * 40, vida: 0.8 + Math.random() * 0.8, cor: Math.random() < 0.5 ? "#fff6c8" : "#ffffff", z: K, pisca: true });
+		}
+	}
+	const CLIMA = {
+		excelente: { taxa: 2.2, criar: function () { return { x: Math.random() * W, y: H * 0.62 + Math.random() * H * 0.3, vx: (Math.random() - 0.5) * 20, vy: -10 - Math.random() * 15, vida: 3 + Math.random() * 2, cor: "#ffe9a0", z: 4, pisca: true }; } },
+		alto: { taxa: 5, criar: function () { return { x: Math.random() * W * 1.2 - W * 0.1, y: -10, vx: 30 + Math.random() * 30, vy: 45 + Math.random() * 30, vida: 30, cor: Math.random() < 0.5 ? "#f6b8cf" : "#ffffff", z: 5, balanco: 1 }; } },
+		medio: { taxa: 4, criar: function () { return { x: -20 + Math.random() * W, y: -10, vx: 60 + Math.random() * 50, vy: 55 + Math.random() * 30, vida: 30, cor: ["#d6762c", "#a64626", "#e2963e"][Math.random() * 3 | 0], z: 6, balanco: 1.6, folha: true }; } },
+		baixo: { taxa: 90, criar: function () { return { x: Math.random() * W * 1.3 - W * 0.15, y: -20, vx: -140, vy: 900 + Math.random() * 200, vida: 2, cor: "rgba(170,175,210,.55)", z: 4, chuva: true }; } }
+	};
+	let acumulado = 0;
+	function atualizarParticulas(dt) {
+		const c = CLIMA[estado.nivel]; acumulado += dt * c.taxa;
+		while (acumulado > 1) { acumulado--; parts.push(c.criar()); }
+		if (estado.nivel === "baixo" && Math.random() < dt * 0.12) relampago = 0.18;
+		relampago = Math.max(0, relampago - dt * 1.4);
+		const agora = performance.now(), novas = [];
+		for (const q of parts) {
+			q.vida -= dt;
+			if (q.balanco) q.vx += Math.sin(agora / 400 + q.y * 0.01) * q.balanco * 6;
+			q.x += q.vx * dt; q.y += q.vy * dt;
+			if (q.gota && q.y >= q.ateY) { q.vida = 0; for (let i = 0; i < 3; i++) novas.push({ x: q.x, y: q.ateY, vx: (Math.random() - 0.5) * 160, vy: -120 - Math.random() * 80, g: 900, cor: "#cdeefa", z: K, vida: 0.35 }); }
+			if (q.g) q.vy += q.g * dt;
+			if (q.y > H + 20 || q.x > W + 40) q.vida = 0;
+		}
+		parts = parts.filter(function (q) { return q.vida > 0; }).concat(novas);
+	}
+
+	// ------------------------------------------------------------------ loop
+	let ultimo = performance.now();
+	function loop(agora) {
+		const dt = Math.min(0.05, (agora - ultimo) / 1000); ultimo = agora;
+		avancar(dt); atualizarParticulas(dt); desenhar();
+		requestAnimationFrame(loop);
+	}
+
+	function irPara(nivel, estagio) {
+		nivel = normalizarNivel(nivel); estagio = normalizarEstagio(estagio);
+		if (reduzirMovimento) { estado.nivel = nivel; estado.estagio = estagio; salvarVisita(); desenhar(); return; }
+		if (atual) { fila = []; atual = null; } // interrompe a animação anterior e recomeça do estado mostrado
+		planejar(nivel, estagio); iniciarProxima();
+	}
+
+	window.raizArvoreHome = { irPara: irPara, estado: estado };
+
+	carregar().then(function () {
+		const nivel = normalizarNivel(cv.dataset.nivel), estagio = normalizarEstagio(cv.dataset.estagio);
+		const visita = lerVisita();
+		if (visita) { estado.nivel = visita.nivel; estado.estagio = visita.estagio; } // começa de onde o usuário viu por último
+		else { estado.nivel = nivel; estado.estagio = estagio; salvarVisita(); }   // primeira visita: sem animação
+		if (reduzirMovimento) { estado.nivel = nivel; estado.estagio = estagio; salvarVisita(); desenhar(); return; }
+		requestAnimationFrame(loop);
+		setTimeout(function () { irPara(nivel, estagio); }, 600); // dá um respiro antes de animar o que mudou
+	}).catch(function (e) { console.warn("Árvore da home não carregou:", e); });
+})();

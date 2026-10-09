@@ -152,10 +152,10 @@
     }
 
     .divConteudoLogin {
-        background-image: url('/public/img/arvore2.jfif');
-        background-repeat: no-repeat;
-        background-size: cover;
-        background-position: center;
+        /* fundo animado (canvas #canvasLoginEstacoes, public/js/loginEstacoes.js); a cor é só fallback */
+        position: relative;
+        overflow: hidden;
+        background-color: #1b1730;
         width: 100vw;
         height: 100vh;
         padding: 10px;
@@ -163,7 +163,20 @@
         place-items: center;
     }
 
+    .canvasLoginEstacoes {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        z-index: 0;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+    }
+
     .divFormLogin {
+        position: relative;
+        z-index: 1;
         width: 100%;
         max-width: 350px;
         background-color: #ffffffdb;
@@ -275,6 +288,10 @@
     }
 
     .divFundoHomePage {
+        /* o cenário e a árvore são desenhados no canvas #canvasArvoreHome (public/js/homeArvore.js);
+           a imagem abaixo é só o fallback enquanto o canvas carrega */
+        position: relative;
+        overflow: hidden;
         width: 100%;
         min-height: 100vh;
         display: flex;
@@ -285,6 +302,23 @@
         background-repeat: no-repeat;
         background-size: cover;
         box-sizing: border-box;
+    }
+
+    .canvasArvoreHome {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 50% 100%;
+        z-index: 0;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+    }
+
+    .conteudoHomePage {
+        position: relative;
+        z-index: 1;
     }
 
     .arvoreHomePage {

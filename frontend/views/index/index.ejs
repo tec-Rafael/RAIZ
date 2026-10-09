@@ -1,5 +1,10 @@
 <div class="divFundoHomePage">
 
+	<%# Árvore animada (public/js/homeArvore.js). Nível e estágio FIXOS por enquanto:
+	    quando o backend fornecer esses dados, basta preencher data-nivel (baixo|medio|alto|excelente)
+	    e data-estagio (1 a 4) a partir da rota. %>
+	<canvas id="canvasArvoreHome" class="canvasArvoreHome" data-nivel="excelente" data-estagio="3" aria-hidden="true"></canvas>
+
 	<div class="menuLateralHomePage">
 
 		<i class="bi bi-list btnMenuNavbar" data-bs-toggle="offcanvas" aria-controls="offcanvasWithBothOptions"
@@ -28,3 +33,5 @@
 	</div>
 
 </div>
+
+<script src="/public/js/homeArvore.js"></script>
