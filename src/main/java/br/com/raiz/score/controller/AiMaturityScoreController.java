@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import br.com.raiz.score.dto.DeliveryScoreDto;
+import br.com.raiz.score.service.DeliveryMetricsService;
+import java.util.List;
 
 import java.time.LocalDate;
 
@@ -31,17 +34,20 @@ public class AiMaturityScoreController {
     private final GovernanceService governanceService;
     private final SecurityIncidentService securityIncidentService;
     private final FinOpsService finOpsService;
+    private final DeliveryMetricsService deliveryMetricsService;
 
     public AiMaturityScoreController(
             AiLiteracyService aiLiteracyService,
             GovernanceService governanceService,
             SecurityIncidentService securityIncidentService,
-            FinOpsService finOpsService) {
+            FinOpsService finOpsService,
+            DeliveryMetricsService deliveryMetricsService) {
 
         this.aiLiteracyService = aiLiteracyService;
         this.governanceService = governanceService;
         this.securityIncidentService = securityIncidentService;
         this.finOpsService = finOpsService;
+        this.deliveryMetricsService = deliveryMetricsService;
     }
 
     @GetMapping("/ai-literacy/{employeeId}")
@@ -119,4 +125,25 @@ public class AiMaturityScoreController {
                 periodo
         );
     }
+
+    @GetMapping("/delivery/{employeeId}")
+    @Operation(
+            summary = "Calcula o Delivery Score",
+            description = "Calcula os indicadores de entrega de software de um funcionário para o período informado."
+    )
+    public DeliveryScoreDto calcularDeliveryScore(
+            @PathVariable String employeeId,
+            @RequestParam LocalDate inicio,
+            @RequestParam LocalDate fim) {
+
+        Periodo periodo = new Periodo(inicio, fim);
+
+        return deliveryMetricsService.calcularDeliveryScoreFuncionario(
+                employeeId,
+                periodo
+        );
+    }
+
+
+
 }
