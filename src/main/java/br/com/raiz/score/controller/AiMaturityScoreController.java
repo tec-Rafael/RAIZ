@@ -1,6 +1,7 @@
 package br.com.raiz.score.controller;
 
 import br.com.raiz.score.domain.Periodo;
+import br.com.raiz.score.domain.PeriodoAMS;
 import br.com.raiz.score.dto.AiLiteracyScoreDto;
 import br.com.raiz.score.dto.GovernanceScoreDto;
 import br.com.raiz.score.dto.SecurityIncidentScoreDto;
@@ -16,6 +17,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import br.com.raiz.score.dto.DeliveryScoreDto;
+import br.com.raiz.score.dto.PeriodoResponseDto;
+import br.com.raiz.score.service.DeliveryMetricsService;
+import java.util.List;
 
 import java.time.LocalDate;
 
@@ -31,92 +36,136 @@ public class AiMaturityScoreController {
     private final GovernanceService governanceService;
     private final SecurityIncidentService securityIncidentService;
     private final FinOpsService finOpsService;
+    private final DeliveryMetricsService deliveryMetricsService;
 
     public AiMaturityScoreController(
             AiLiteracyService aiLiteracyService,
             GovernanceService governanceService,
             SecurityIncidentService securityIncidentService,
-            FinOpsService finOpsService) {
+            FinOpsService finOpsService,
+            DeliveryMetricsService deliveryMetricsService) {
 
         this.aiLiteracyService = aiLiteracyService;
         this.governanceService = governanceService;
         this.securityIncidentService = securityIncidentService;
         this.finOpsService = finOpsService;
+        this.deliveryMetricsService = deliveryMetricsService;
     }
 
     @GetMapping("/ai-literacy/{employeeId}")
     @Operation(
             summary = "Calcula o AI Literacy Score",
-            description = "Calcula o indicador de AI Literacy de um funcionário para o período informado."
+            description = "Calcula o AI Literacy Score de um funcionário no período AMS informado."
     )
     public AiLiteracyScoreDto calcularAiLiteracy(
             @PathVariable String employeeId,
-            @RequestParam LocalDate inicio,
-            @RequestParam LocalDate fim) {
+            @RequestParam int periodo) {
 
-        Periodo periodo = new Periodo(inicio, fim);
+        Periodo periodoCalculado = PeriodoAMS.obterPeriodo(periodo);
 
-        return aiLiteracyService.calcularAiLiteracy(
+        AiLiteracyScoreDto resultado =
+                aiLiteracyService.calcularAiLiteracy(
+                        employeeId,
+                        periodoCalculado
+                );
+
+        return new AiLiteracyScoreDto(
                 employeeId,
-                periodo
+                new PeriodoResponseDto(periodo, periodoCalculado),
+                resultado.getCompletionScore(),
+                resultado.getTrainingScore(),
+                resultado.getDiversityScore(),
+                resultado.getAiLiteracyScore()
         );
     }
 
     @GetMapping("/governance/{employeeId}")
     @Operation(
             summary = "Calcula o Governance Score",
-            description = "Calcula o indicador de governança do uso de IA de um funcionário para o período informado."
+            description = "Calcula o indicador de governança de um funcionário no período AMS informado."
     )
     public GovernanceScoreDto calcularGovernanceScore(
             @PathVariable String employeeId,
-            @RequestParam LocalDate inicio,
-            @RequestParam LocalDate fim) {
+            @RequestParam int periodo) {
 
-        Periodo periodo = new Periodo(inicio, fim);
+        Periodo periodoCalculado = PeriodoAMS.obterPeriodo(periodo);
 
-        Double score = governanceService.calcularGovernanceScore(
+        GovernanceScoreDto resultado =
+                governanceService.calcularGovernanceDetalhado(
+                        employeeId,
+                        periodoCalculado,
+                        periodo
+                );
+
+        return new GovernanceScoreDto(
                 employeeId,
-                periodo
+                resultado.getPeriodo(),
+                resultado.getRequestsTotais(),
+                resultado.getRequestsAprovados(),
+                resultado.getGovernanceScore()
         );
-
-        return new GovernanceScoreDto(score);
     }
 
     @GetMapping("/security-incidents/{employeeId}")
     @Operation(
             summary = "Calcula o Security Score",
-            description = "Calcula o indicador de segurança do uso de IA de um funcionário para o período informado."
+            description = "Calcula o indicador de segurança de um funcionário no período AMS informado."
     )
     public SecurityIncidentScoreDto calcularSecurityScore(
             @PathVariable String employeeId,
-            @RequestParam LocalDate inicio,
-            @RequestParam LocalDate fim) {
+            @RequestParam int periodo) {
 
-        Periodo periodo = new Periodo(inicio, fim);
+        Periodo periodoCalculado = PeriodoAMS.obterPeriodo(periodo);
 
-        Double score = securityIncidentService.calcularSecurityScore(
+        return securityIncidentService.calcularSecurityDetalhado(
                 employeeId,
+                periodoCalculado,
                 periodo
         );
-
-        return new SecurityIncidentScoreDto(score);
     }
 
     @GetMapping("/finops/{employeeId}")
     @Operation(
             summary = "Calcula o FinOps Score",
-            description = "Calcula o indicador de eficiência econômica do uso de IA de um funcionário para o período informado."
+            description = "Calcula o indicador de eficiência econômica do uso de IA de um funcionário no período AMS informado."
     )
     public FinOpsScoreDto calcularFinOpsScore(
             @PathVariable String employeeId,
-            @RequestParam LocalDate inicio,
-            @RequestParam LocalDate fim) {
+            @RequestParam int periodo) {
 
-        Periodo periodo = new Periodo(inicio, fim);
+        Periodo periodoCalculado = PeriodoAMS.obterPeriodo(periodo);
 
-        return finOpsService.calcularFinOpsScore(
+        FinOpsScoreDto resultado =
+                finOpsService.calcularFinOpsScore(
+                        employeeId,
+                        periodoCalculado
+                );
+
+        return new FinOpsScoreDto(
                 employeeId,
-                periodo
+                new PeriodoResponseDto(periodo, periodoCalculado),
+                resultado.tokenEfficiency(),
+                resultado.requestEfficiency(),
+                resultado.finOpsScore()
         );
     }
+
+    @GetMapping("/delivery/{employeeId}")
+    @Operation(
+            summary = "Calcula o Delivery Score",
+            description = "Calcula o Delivery Score de um funcionário no período AMS informado."
+    )
+    public DeliveryScoreDto calcularDeliveryScore(
+            @PathVariable String employeeId,
+            @RequestParam int periodo) {
+
+        Periodo periodoCalculado = PeriodoAMS.obterPeriodo(periodo);
+
+        return deliveryMetricsService
+                .calcularDeliveryScoreFuncionario(employeeId, periodoCalculado)
+                .comNumeroPeriodo(periodo);
+    }
+
+
+
 }

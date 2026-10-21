@@ -4,6 +4,8 @@ import br.com.raiz.score.domain.Periodo;
 import br.com.raiz.score.domain.SecurityEvent;
 import br.com.raiz.score.repository.SecurityEventRepository;
 import org.springframework.stereotype.Service;
+import br.com.raiz.score.dto.SecurityIncidentScoreDto;
+import br.com.raiz.score.dto.PeriodoResponseDto;
 
 import java.util.List;
 
@@ -57,5 +59,38 @@ public class SecurityIncidentService {
             case "critica" -> 40;
             default -> 0;
         };
+    }
+
+    public SecurityIncidentScoreDto calcularSecurityDetalhado(
+            String employeeId,
+            Periodo periodo,
+            int numeroPeriodo
+    ) {
+        List<SecurityEvent> eventos =
+                securityEventRepository.findByEmployeeId(employeeId);
+
+        List<SecurityEvent> eventosNoPeriodo = eventos.stream()
+                .filter(evento -> evento.getTimestamp() != null)
+                .filter(evento -> !evento.getTimestamp().toLocalDate()
+                        .isBefore(periodo.getInicio()))
+                .filter(evento -> !evento.getTimestamp().toLocalDate()
+                        .isAfter(periodo.getFim()))
+                .toList();
+
+        int totalIncidentes = eventosNoPeriodo.size();
+
+        double penalidade = eventosNoPeriodo.stream()
+                .mapToDouble(this::calcularPenalidade)
+                .sum();
+
+        double securityScore = Math.max(0, 100 - penalidade);
+
+        return new SecurityIncidentScoreDto(
+                employeeId,
+                new PeriodoResponseDto(numeroPeriodo, periodo),
+                totalIncidentes,
+                penalidade,
+                securityScore
+        );
     }
 }
