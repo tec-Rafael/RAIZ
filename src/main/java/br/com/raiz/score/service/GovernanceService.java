@@ -6,6 +6,8 @@ import br.com.raiz.score.domain.ApprovedAiTool;
 import br.com.raiz.score.domain.Periodo;
 import br.com.raiz.score.repository.ApprovedAiToolRepository;
 import org.springframework.stereotype.Service;
+import br.com.raiz.score.dto.GovernanceScoreDto;
+import br.com.raiz.score.dto.PeriodoResponseDto;
 
 import java.util.List;
 import java.util.Map;
@@ -91,5 +93,74 @@ public class GovernanceService {
                 .sum();
 
         return (requestsAprovados / (double) requestsTotais) * 100;
+    }
+
+    public GovernanceScoreDto calcularGovernanceDetalhado(
+            String employeeId,
+            Periodo periodo,
+            int numeroPeriodo
+    ) {
+        List<UtilizacaoIA> utilizacoes =
+                utilizacaoIARepository.findByEmployeeId(employeeId);
+
+        List<UtilizacaoIA> utilizacoesNoPeriodo = utilizacoes.stream()
+                .filter(u -> u.getTimestamp() != null)
+                .filter(u -> !u.getTimestamp().toLocalDate()
+                        .isBefore(periodo.getInicio()))
+                .filter(u -> !u.getTimestamp().toLocalDate()
+                        .isAfter(periodo.getFim()))
+                .toList();
+
+        long requestsTotais = utilizacoesNoPeriodo.stream()
+                .mapToLong(u -> u.getRequestCount() == null
+                        ? 0L : u.getRequestCount())
+                .sum();
+
+        long requestsAprovados = 0L;
+        Double score = null;
+
+        if (requestsTotais > 0) {
+            List<String> companyIds = utilizacoesNoPeriodo.stream()
+                    .map(UtilizacaoIA::getCompanyId)
+                    .filter(id -> id != null)
+                    .distinct()
+                    .toList();
+
+            Map<String, ApprovedAiTool> ferramentasAprovadas =
+                    companyIds.stream()
+                            .flatMap(id -> approvedAiToolRepository
+                                    .findByIdCompanyId(id).stream())
+                            .collect(Collectors.toMap(
+                                    tool -> tool.getCompanyId()
+                                            + "|" + tool.getAiToolId(),
+                                    Function.identity()
+                            ));
+
+            requestsAprovados = utilizacoesNoPeriodo.stream()
+                    .filter(u -> {
+                        String chave = u.getCompanyId()
+                                + "|" + u.getAiToolId();
+
+                        ApprovedAiTool ferramenta =
+                                ferramentasAprovadas.get(chave);
+
+                        return ferramenta != null
+                                && ferramenta.getApprovalStatus() != null
+                                && ferramenta.getApprovalStatus()
+                                .equalsIgnoreCase("Aprovado");
+                    })
+                    .mapToLong(u -> u.getRequestCount() == null
+                            ? 0L : u.getRequestCount())
+                    .sum();
+
+            score = (requestsAprovados / (double) requestsTotais) * 100;
+        }
+
+        return new GovernanceScoreDto(
+                requestsTotais,
+                requestsAprovados,
+                score,
+                new PeriodoResponseDto(numeroPeriodo, periodo)
+        );
     }
 }

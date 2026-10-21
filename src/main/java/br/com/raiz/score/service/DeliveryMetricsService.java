@@ -91,6 +91,8 @@ public class DeliveryMetricsService {
                     .stream()
                     .filter(issue -> estaNoPeriodo(
                             issue.getCreatedAt(), periodo))
+                    .filter(issue -> estaNoPeriodo(
+                            issue.getClosedAt(), periodo))
                     .toList();
 
             Double issueTime = calcularMedianaIssues(issues);
