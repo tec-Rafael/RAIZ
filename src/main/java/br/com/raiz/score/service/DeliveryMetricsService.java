@@ -44,17 +44,17 @@ public class DeliveryMetricsService {
     );
 
     // Percentis históricos fixos
-    private static final double ISSUE_P10 = 9.2;
-    private static final double ISSUE_P90 = 33.8;
+    public static final double ISSUE_P10 = 9.2;
+    public static final double ISSUE_P90 = 33.8;
 
-    private static final double MERGE_P10 = 1.2708333333333335;
-    private static final double MERGE_P90 = 2.770833333333333;
+    public static final double MERGE_P10 = 1.2708333333333335;
+    public static final double MERGE_P90 = 2.770833333333333;
 
-    private static final double REVIEW_P10 = 68.54483081695457;
-    private static final double REVIEW_P90 = 88.55182535769397;
+    public static final double REVIEW_P10 = 68.54483081695457;
+    public static final double REVIEW_P90 = 88.55182535769397;
 
-    private static final double PR_P10 = 4.0;
-    private static final double PR_P90 = 20.0;
+    public static final double PR_P10 = 4.0;
+    public static final double PR_P90 = 20.0;
 
     public DeliveryMetricsService(
             PullRequestRepository pullRequestRepository,
@@ -388,7 +388,7 @@ public class DeliveryMetricsService {
     }
 
 
-    private Double normalizar(
+    public static Double normalizar(
             Double valor,
             double p10,
             double p90,
@@ -409,7 +409,7 @@ public class DeliveryMetricsService {
         return arredondar(Math.max(0.0, Math.min(100.0, nota)));
     }
 
-    private Double calcularMediaPonderada(
+    public static Double calcularMediaPonderada(
             Double issue,
             Double merge,
             Double review,
@@ -438,7 +438,7 @@ public class DeliveryMetricsService {
         return pesos == 0.0 ? null : soma / pesos;
     }
 
-    private Double calcularNotaRelativa(
+    public static Double calcularNotaRelativa(
             Double valorFuncionario,
             List<Double> valoresGrupo,
             boolean maiorMelhor
@@ -527,7 +527,7 @@ public class DeliveryMetricsService {
         return valores.get(meio);
     }
 
-    private Double arredondar(Double valor) {
+    public static Double arredondar(Double valor) {
         if (valor == null) {
             return null;
         }

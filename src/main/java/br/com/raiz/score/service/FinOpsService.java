@@ -49,22 +49,11 @@ public class FinOpsService {
 
         // Se algum modelo não existir ou não possuir preço,
         // o FinOps do funcionário fica como N/A.
-        for (UtilizacaoIA utilizacao : utilizacoes) {
-
-            AiModel modelo = aiModelRepository
-                    .findById(utilizacao.getModelId())
-                    .orElse(null);
-
-            if (modelo == null
-                    || modelo.getInputPriceUsdPer1kTokens() == null
-                    || modelo.getOutputPriceUsdPer1kTokens() == null) {
-
-                return new FinOpsScoreDto(null, null, null);
-            }
-        }
-
         Map<String, AiModel> modelosFuncionario =
                 carregarModelos(utilizacoes);
+        if (possuiPrecoInvalido(utilizacoes, modelosFuncionario)) {
+            return new FinOpsScoreDto(null, null, null);
+        }
 
         Double custoTokenFuncionario =
                 calcularCustoPorMilTokens(
@@ -158,13 +147,10 @@ public class FinOpsService {
                 .distinct()
                 .toList();
 
-        List<AiModel> modelos =
-                aiModelRepository.findAllById(modelIds);
-
         Map<String, AiModel> modelosPorId = new HashMap<>();
-
-        for (AiModel modelo : modelos) {
-            modelosPorId.put(modelo.getModelId(), modelo);
+        for (String id : modelIds) {
+            if (id != null) aiModelRepository.findById(id)
+                    .ifPresent(modelo -> modelosPorId.put(id, modelo));
         }
 
         return modelosPorId;

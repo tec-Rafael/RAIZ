@@ -4,7 +4,7 @@ Projeto com API Spring Boot, PostgreSQL e frontend simples.
 
 ## Dashboard
 
-O dashboard consulta dados reais do banco pelas rotas `/api/dashboard`, com visões demonstrativas de colaborador, gestor e administrador. Inclui cinco períodos, KPIs de entregas e uso de IA, gráficos e filtros interativos. Veja [execução, contratos e critérios de cálculo](docs/dashboard.md).
+O dashboard calcula o AMS por pessoa e período, com visões demonstrativas de colaborador, gestor e administrador. Exibe dimensões, pesos, notas ausentes, evolução, melhores desempenhos e comparações entre empresas e áreas. As métricas de uso de IA e entregas permanecem no detalhamento técnico. Veja [regras, exemplos e contratos AMS](docs/ams.md).
 
 ## Rodar
 

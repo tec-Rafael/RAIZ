@@ -1,7 +1,6 @@
 package br.com.raiz.score.controller;
 
 import br.com.raiz.score.domain.Periodo;
-import br.com.raiz.score.domain.PeriodoAMS;
 import br.com.raiz.score.dto.AiLiteracyScoreDto;
 import br.com.raiz.score.dto.GovernanceScoreDto;
 import br.com.raiz.score.dto.SecurityIncidentScoreDto;
@@ -32,6 +31,7 @@ import java.time.LocalDate;
 )
 public class AiMaturityScoreController {
 
+    private final br.com.raiz.score.service.AiMaturityScoreService amsService;
     private final AiLiteracyService aiLiteracyService;
     private final GovernanceService governanceService;
     private final SecurityIncidentService securityIncidentService;
@@ -43,13 +43,21 @@ public class AiMaturityScoreController {
             GovernanceService governanceService,
             SecurityIncidentService securityIncidentService,
             FinOpsService finOpsService,
-            DeliveryMetricsService deliveryMetricsService) {
+            DeliveryMetricsService deliveryMetricsService,
+            br.com.raiz.score.service.AiMaturityScoreService amsService) {
 
+        this.amsService = amsService;
         this.aiLiteracyService = aiLiteracyService;
         this.governanceService = governanceService;
         this.securityIncidentService = securityIncidentService;
         this.finOpsService = finOpsService;
         this.deliveryMetricsService = deliveryMetricsService;
+    }
+
+    @GetMapping("/ams/{employeeId}")
+    @Operation(summary = "AMS individual com dimensões, pesos e tratamento de notas ausentes")
+    public br.com.raiz.score.dto.AmsDto.Individual calcularAMS(@PathVariable String employeeId, @RequestParam int periodo) {
+        return amsService.calcularAMS(employeeId, periodo);
     }
 
     @GetMapping("/ai-literacy/{employeeId}")
@@ -61,7 +69,7 @@ public class AiMaturityScoreController {
             @PathVariable String employeeId,
             @RequestParam int periodo) {
 
-        Periodo periodoCalculado = PeriodoAMS.obterPeriodo(periodo);
+        Periodo periodoCalculado = amsService.obterPeriodo(periodo);
 
         AiLiteracyScoreDto resultado =
                 aiLiteracyService.calcularAiLiteracy(
@@ -88,7 +96,7 @@ public class AiMaturityScoreController {
             @PathVariable String employeeId,
             @RequestParam int periodo) {
 
-        Periodo periodoCalculado = PeriodoAMS.obterPeriodo(periodo);
+        Periodo periodoCalculado = amsService.obterPeriodo(periodo);
 
         GovernanceScoreDto resultado =
                 governanceService.calcularGovernanceDetalhado(
@@ -115,7 +123,7 @@ public class AiMaturityScoreController {
             @PathVariable String employeeId,
             @RequestParam int periodo) {
 
-        Periodo periodoCalculado = PeriodoAMS.obterPeriodo(periodo);
+        Periodo periodoCalculado = amsService.obterPeriodo(periodo);
 
         return securityIncidentService.calcularSecurityDetalhado(
                 employeeId,
@@ -133,7 +141,7 @@ public class AiMaturityScoreController {
             @PathVariable String employeeId,
             @RequestParam int periodo) {
 
-        Periodo periodoCalculado = PeriodoAMS.obterPeriodo(periodo);
+        Periodo periodoCalculado = amsService.obterPeriodo(periodo);
 
         FinOpsScoreDto resultado =
                 finOpsService.calcularFinOpsScore(
@@ -159,7 +167,7 @@ public class AiMaturityScoreController {
             @PathVariable String employeeId,
             @RequestParam int periodo) {
 
-        Periodo periodoCalculado = PeriodoAMS.obterPeriodo(periodo);
+        Periodo periodoCalculado = amsService.obterPeriodo(periodo);
 
         return deliveryMetricsService
                 .calcularDeliveryScoreFuncionario(employeeId, periodoCalculado)

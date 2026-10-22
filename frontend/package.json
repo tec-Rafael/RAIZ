@@ -4,7 +4,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app",
-    "test:dashboard": "node test/dashboard-integration.cjs"
+    "test:dashboard": "node test/dashboard-integration.cjs",
+    "test:ams": "node test/ams-integration.cjs"
   },
   "author": "Rafael Nascimento",
   "license": "MIT",
