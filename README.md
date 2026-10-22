@@ -2,6 +2,10 @@
 
 Projeto com API Spring Boot, PostgreSQL e frontend simples.
 
+## Dashboard
+
+O dashboard consulta dados reais do banco pelas rotas `/api/dashboard`, com visões demonstrativas de colaborador, gestor e administrador. Inclui cinco períodos, KPIs de entregas e uso de IA, gráficos e filtros interativos. Veja [execução, contratos e critérios de cálculo](docs/dashboard.md).
+
 ## Rodar
 
 ```bash

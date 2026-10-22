@@ -1,78 +1,43 @@
-<div class="dashboardPagina">
-
-    <div class="menuLateral">
-
-        <i class="bi bi-list btnMenuNavbar" data-bs-toggle="offcanvas" aria-controls="offcanvasWithBothOptions"
-            data-bs-target="#offcanvasWithBothOptions">
-        </i>
-
-        <hr>
-
-        <div class="offcanvas offcanvas-start" data-bs-scroll="true" tabindex="-1" id="offcanvasWithBothOptions"
-            aria-labelledby="offcanvasWithBothOptionsLabel">
-
-            <div class="offcanvas-header">
-
-                <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">
-                    Menu
-                </h5>
-
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
-                </button>
-
-            </div>
-
-            <div class="offcanvas-body">
-
-                <p><a href="funcionario/criar">Cadastrar Funcionário</a></p>
-                <p><a href="funcionario/listar">Listar Funcionário</a></p>
-                <p><a href="/dashboard">Dashboard</a></p>
-
-            </div>
-
+<link rel="stylesheet" href="/public/css/dashboard.css?v=4">
+<div class="raizDash">
+    <aside class="rdSidebar" aria-label="Navegação principal">
+        <a class="rdBrand" href="/" aria-label="RAIZ início"><img src="/public/img/logo.png" alt="" width="44" height="44"><span>rAIz<span class="rdBrandDot">.</span></span></a>
+        <span class="rdNavLabel">WORKSPACE</span>
+        <a class="rdNav active" href="/dashboard" aria-current="page"><i class="bi bi-grid-1x2" aria-hidden="true"></i> Visão analítica</a>
+        <a class="rdNav" href="/funcionario/listar"><i class="bi bi-people" aria-hidden="true"></i> Colaboradores</a>
+        <a class="rdNav" href="/funcionario/criar"><i class="bi bi-person-plus" aria-hidden="true"></i> Cadastrar</a>
+        <div class="rdSidebarFoot"><span class="rdLive"></span> Inteligência para evoluir<br><small>Monitoramento de uso de IA</small></div>
+    </aside>
+    <main class="rdMain">
+        <header class="rdHeader"><div><p class="rdEyebrow">RAIZ / ANALYTICS</p><h1>Uma visão clara da evolução.</h1><p class="rdMuted">Entregas, adoção de IA e desenvolvimento em um só lugar.</p></div><span class="rdBadge"><span class="rdLive"></span> Dados do banco</span></header>
+        <section class="rdDemo" aria-label="Contexto da demonstração">
+            <div><strong>Explore as perspectivas</strong><p>Perfis em demonstração · sem autenticação por perfil</p></div>
+            <label>Visão<select id="rdPerfil"><option value="colaborador">Colaborador</option><option value="gestor">Gestor</option><option value="administrador">Administrador</option></select></label>
+            <label>Empresa<select id="rdEmpresa" disabled><option>Carregando…</option></select></label>
+            <label class="rdReference">Pessoa de referência<select id="rdUsuario" disabled><option>Carregando pessoas…</option></select></label>
+        </section>
+        <div id="rdStatus" role="status" aria-live="polite"></div>
+        <section id="rdFilters" class="rdFilters" aria-label="Filtros da análise" hidden>
+            <label>Analisar<select id="rdVisao"></select></label>
+            <label id="rdAreaField" hidden>Área<select id="rdArea"></select></label>
+            <label id="rdPessoaField" hidden>Colaborador<select id="rdPessoa"></select></label>
+            <label>Período<select id="rdPeriodo"></select></label>
+            <label>Ferramenta de IA<select id="rdFerramenta"></select></label>
+            <button id="rdReset" class="rdButton rdGhost" type="button" title="Restaurar filtros"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Limpar</button>
+        </section>
+        <div id="rdContent" hidden>
+            <section class="rdContext"><div><h2 id="rdTitle"></h2><p id="rdSubtitle" class="rdMuted"></p></div><span id="rdPeriodBadge" class="rdBadge"></span></section>
+            <p id="rdCoverage" class="rdNotice"></p>
+            <section id="rdKpis" class="rdKpis" aria-label="Indicadores principais"></section>
+            <section class="rdCharts">
+                <article class="rdCard rdEvolution"><div class="rdCardHead"><div><p class="rdEyebrow">TRAJETÓRIA</p><h2>Evolução entre períodos</h2></div><div class="rdInlineFilters"><label>Indicador<select id="rdMetrica"><option value="issues">Issues concluídas</option><option value="prs">PRs integrados</option><option value="requisicoes">Requisições de IA</option><option value="tokens">Tokens consumidos</option></select></label><label>Comparação<select id="rdModo"><option value="dia">Por dia corrido</option><option value="total">Total do período</option></select></label></div></div><p id="rdChartNote" class="rdMuted"></p><div class="rdCanvas"><canvas id="rdEvolution" role="img" aria-label="Evolução do indicador nos cinco períodos"></canvas></div><details><summary>Ver valores do gráfico</summary><div id="rdEvolutionTable" class="rdTableWrap"></div></details></article>
+                <article class="rdCard"><p class="rdEyebrow">ADOÇÃO</p><h2>Uso por ferramenta</h2><p class="rdMuted">Requisições no período selecionado</p><div id="rdToolsEmpty" class="rdEmpty" hidden>Nenhum uso de IA neste recorte.</div><div class="rdCanvas" id="rdToolsWrap"><canvas id="rdTools" role="img" aria-label="Requisições por ferramenta de IA"></canvas></div><details><summary>Ver valores do gráfico</summary><div id="rdToolsTable" class="rdTableWrap"></div></details></article>
+            </section>
+            <section class="rdCard rdQuality"><div><p class="rdEyebrow">QUALIDADE E DESENVOLVIMENTO</p><h2>Além do volume</h2><p class="rdMuted">Indicadores com unidades e critérios próprios.</p></div><div id="rdQualityMetrics" class="rdQualityMetrics"></div><p class="rdFootnote">Sucesso calculado por registro com status informado; latência média dos registros disponíveis. Scores individuais consideram todas as ferramentas. Segurança segue a regra existente: 100 pontos quando não há incidentes registrados.</p></section>
+            <section class="rdCard" id="rdPeopleSection"><div class="rdCardHead"><div><p class="rdEyebrow">DETALHAMENTO</p><h2>Explore os resultados</h2></div><div class="rdInlineFilters"><label id="rdGroupField" hidden>Agrupar por<select id="rdGroup"><option value="pessoa">Colaborador</option><option value="area">Área</option></select></label><label>Buscar<input type="search" id="rdSearch" placeholder="Buscar pelo nome" maxlength="150"></label><label>Ordenar por<select id="rdOrder"><option value="requisicoes">Requisições</option><option value="issues">Issues concluídas</option><option value="prs">PRs integrados</option><option value="nome">Nome</option></select></label></div></div><p class="rdMuted">Selecione um nome para abrir a análise. Entregas não são filtradas por ferramenta de IA.</p><div id="rdTableStatus" role="status" aria-live="polite"></div><div id="rdTable" class="rdTableWrap"></div><div class="rdPagination"><span id="rdPageInfo"></span><div><button id="rdPrev" class="rdButton rdGhost" type="button">Anterior</button><button id="rdNext" class="rdButton rdGhost" type="button">Próxima</button></div></div></section>
+            <footer class="rdFooter">Consumo de IA não equivale a produtividade. Entregas representam atividades de engenharia disponíveis na base; ausência de registros não demonstra baixo desempenho.</footer>
         </div>
-
-    </div>
-
-
-    <div class="container-fluid divConteudo dashConteudoPagina">
-
-        <div class="dashTopo">
-
-            <div class="dashTopo__titulo">
-                <img src="/public/img/logo.png" alt="" class="dashTopo__logo" width="44" height="44">
-                <div>
-                    <h1>Dashboard</h1>
-                    <p id="dashContexto" class="dashTopo__contexto" aria-live="polite"></p>
-                </div>
-            </div>
-
-            <!-- SIMULAÇÃO: enquanto o login não guarda o usuário, este seletor define qual perfil está "logado".
-                 Remover quando o perfil vier da sessão. -->
-            <div class="dashSimulacao">
-                <span class="dashSimulacao__selo"><i class="bi bi-cone-striped" aria-hidden="true"></i>Modo simulação</span>
-                <div class="dashSimulacao__campo">
-                    <label for="dashSimularComo" class="form-label">Simular como</label>
-                    <select id="dashSimularComo" class="form-select form-select-sm"></select>
-                </div>
-                <div class="dashSimulacao__usuario" id="dashUsuarioSimulado"></div>
-            </div>
-
-        </div>
-
-        <p class="dashAviso" role="note">
-            <i class="bi bi-info-circle" aria-hidden="true"></i>
-            Os dados desta página são simulados para demonstração e não representam o uso real de nenhuma pessoa ou empresa.
-        </p>
-
-        <div class="dashCard dashFiltros" id="dashFiltros" role="group" aria-label="Filtros do dashboard"></div>
-
-        <div id="dashConteudo"></div>
-
-    </div>
-
+    </main>
 </div>
-
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
-<script src="/public/js/dashboard.js?v=1"></script>
+<script src="/public/js/dashboard.js?v=3"></script>

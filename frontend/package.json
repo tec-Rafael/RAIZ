@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "start": "node app"
+    "start": "node app",
+    "test:dashboard": "node test/dashboard-integration.cjs"
   },
   "author": "Rafael Nascimento",
   "license": "MIT",
