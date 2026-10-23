@@ -104,6 +104,7 @@ app.use((req, res, next) => {
 app.use("/", require("./routes/index"));
 app.use("/funcionario", require("./routes/funcionario"));
 app.use("/api/funcionario", require("./routes/api/funcionarioApi"));
+app.use("/api/custos", require("./routes/api/custosApi"));
 
 
 // Depois de registrados todos os caminhos das rotas e seus

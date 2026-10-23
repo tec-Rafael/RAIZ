@@ -1,0 +1,66 @@
+<div class="costPage">
+  <main class="costContainer">
+    <a class="costBack" href="/">Voltar ao início</a>
+    <h1>Simulação de custos do RAIZ</h1>
+    <p class="costIntro">Informe as horas, os prazos e os custos para comparar alternativas de contratação. A simulação escolhe a opção viável de menor custo e estima manutenção e operação no primeiro ano.</p>
+
+    <form id="costForm">
+      <section class="costSection">
+        <h2>Premissas gerais</h2>
+        <div class="costGrid">
+          <label>Reserva de risco (%)<input id="contingencyPercent" type="number" min="0" step="0.01" value="15" required></label>
+          <label>Manutenção anual mínima (%)<input id="maintenanceMin" type="number" min="0" step="0.01" value="15" required></label>
+          <label>Manutenção anual máxima (%)<input id="maintenanceMax" type="number" min="0" step="0.01" value="20" required></label>
+          <label>Hospedagem mensal mínima (R$)<input id="hostingMin" type="number" min="0" step="0.01" value="300" required></label>
+          <label>Hospedagem mensal máxima (R$)<input id="hostingMax" type="number" min="0" step="0.01" value="3000" required></label>
+          <label>IA mensal mínimo (R$)<input id="aiMin" type="number" min="0" step="0.01" value="0" required></label>
+          <label>IA mensal base (R$)<input id="aiBase" type="number" min="0" step="0.01" value="0" required></label>
+          <label>IA mensal máximo (R$)<input id="aiMax" type="number" min="0" step="0.01" value="0" required></label>
+        </div>
+      </section>
+
+      <section class="costSection">
+        <h2>Alternativas de contratação</h2>
+        <div class="costGrid">
+          <label>Valor-hora freelancer (R$)<input id="freelancerRate" type="number" min="0.01" step="0.01" value="125" required></label>
+          <label>Capacidade freelancer (h/mês)<input id="freelancerCapacity" type="number" min="1" step="1" value="110" required></label>
+          <label>Valor-hora software house (R$)<input id="houseRate" type="number" min="0.01" step="0.01" value="225" required></label>
+          <label>Capacidade software house (h/mês)<input id="houseCapacity" type="number" min="1" step="1" value="300" required></label>
+        </div>
+      </section>
+
+      <section class="costSection">
+        <h2>Cenários por porte</h2>
+        <div class="costGrid">
+          <label>Horas - empresa pequena<input id="smallHours" type="number" min="1" step="1" value="420" required></label>
+          <label>Prazo em meses - pequena<input id="smallMonths" type="number" min="1" step="1" value="4" required></label>
+          <label>Horas - empresa média<input id="mediumHours" type="number" min="1" step="1" value="600" required></label>
+          <label>Prazo em meses - média<input id="mediumMonths" type="number" min="1" step="1" value="6" required></label>
+          <label>Horas - empresa grande<input id="largeHours" type="number" min="1" step="1" value="850" required></label>
+          <label>Prazo em meses - grande<input id="largeMonths" type="number" min="1" step="1" value="7" required></label>
+        </div>
+      </section>
+
+      <button class="costButton" type="submit">Calcular cenários</button>
+      <p id="costError" class="costError" role="alert"></p>
+    </form>
+
+    <section id="costResults" class="costResults" aria-live="polite">
+      <h2>Resultados</h2>
+      <p>Preencha ou ajuste as premissas e selecione “Calcular cenários”.</p>
+    </section>
+  </main>
+</div>
+<style>
+  .costPage{min-height:100vh;background:#f1f0e2;padding:32px 16px;color:#202020;font-family:Arial,Helvetica,sans-serif}
+  .costContainer{max-width:980px;margin:0 auto;background:#fff;padding:28px;border-radius:12px;box-shadow:0 2px 12px #00000012}
+  .costBack{color:#1e7349;text-decoration:none}.costPage h1{margin:12px 0}.costIntro{max-width:780px;line-height:1.5}
+  .costSection{margin:24px 0;padding:18px;border:1px solid #d8d8d8;border-radius:8px}.costSection h2,.costResults h2{font-size:1.2rem;margin:0 0 14px}
+  .costGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+  .costGrid label{display:flex;flex-direction:column;gap:5px;font-size:.93rem}.costGrid input{padding:9px;border:1px solid #aaa;border-radius:5px}
+  .costButton{padding:11px 18px;background:#1e7349;color:#fff;border:0;border-radius:5px;font-weight:bold;cursor:pointer}
+  .costResults{margin-top:28px}.costCard{border:1px solid #cfcfcf;border-left:5px solid #1e7349;border-radius:7px;padding:16px;margin:14px 0}
+  .costCard h3{margin:0 0 10px}.costCard p{margin:6px 0}.costError{color:#9e1b32}.costAlternatives{padding-left:20px}
+  @media(max-width:600px){.costContainer{padding:18px}.costSection{padding:13px}}
+</style>
+<script defer src="/public/js/custos.js"></script>

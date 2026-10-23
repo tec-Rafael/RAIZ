@@ -19,6 +19,10 @@ router.get("/dashboard", wrap(async (req, res) => {
   res.render("dashboard/index", {titulo: "Dashboard" });
 }));
 
+router.get("/custos", wrap(async (req, res) => {
+  res.render("custos/index", { titulo: "Simulação de custos" });
+}));
+
 router.get("/sobre-nos", wrap(async (req, res) => {
   res.render("index/sobre", { titulo: "Sobre Nós" });
 }));
