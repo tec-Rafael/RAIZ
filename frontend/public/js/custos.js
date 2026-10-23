@@ -55,6 +55,80 @@
     });
   }
 
+  function roundMoney(amount) {
+    return Math.round((amount + Number.EPSILON) * 100) / 100;
+  }
+
+  function percentage(amount, percent) {
+    return roundMoney(amount * percent / 100);
+  }
+
+  function average(first, second) {
+    return roundMoney((first + second) / 2);
+  }
+
+  function simulate(payload) {
+    return {
+      scenarios: payload.scenarios.map(scenario => {
+        const alternatives = payload.providers.map(provider => {
+          const capacity = provider.capacityHoursPerMonth * scenario.deadlineMonths;
+          const baseCost = roundMoney(provider.hourlyRate * scenario.estimatedHours);
+          const contingencyCost = percentage(baseCost, payload.contingencyPercent);
+          return {
+            providerName: provider.name,
+            hourlyRate: provider.hourlyRate,
+            capacityWithinDeadlineHours: capacity,
+            feasible: scenario.estimatedHours <= capacity,
+            missingCapacityHours: Math.max(0, scenario.estimatedHours - capacity),
+            baseCost,
+            contingencyCost,
+            implementationCost: roundMoney(baseCost + contingencyCost)
+          };
+        });
+
+        const feasibleAlternatives = alternatives.filter(item => item.feasible);
+        const selected = feasibleAlternatives.sort((a, b) => a.implementationCost - b.implementationCost)[0];
+        if (!selected) {
+          return {
+            scenarioName: scenario.name,
+            estimatedHours: scenario.estimatedHours,
+            deadlineMonths: scenario.deadlineMonths,
+            alternatives,
+            selectedProvider: null
+          };
+        }
+
+        const implementation = selected.implementationCost;
+        const annualMaintenanceMin = percentage(implementation, payload.annualMaintenancePercentMin);
+        const annualMaintenanceMax = percentage(implementation, payload.annualMaintenancePercentMax);
+        const monthlyMaintenanceMin = roundMoney(annualMaintenanceMin / 12);
+        const monthlyMaintenanceMax = roundMoney(annualMaintenanceMax / 12);
+        const monthlyHostingBase = average(payload.monthlyHostingCostMin, payload.monthlyHostingCostMax);
+
+        return {
+          scenarioName: scenario.name,
+          estimatedHours: scenario.estimatedHours,
+          deadlineMonths: scenario.deadlineMonths,
+          alternatives,
+          selectedProvider: selected.providerName,
+          implementationBaseCost: selected.baseCost,
+          contingencyCost: selected.contingencyCost,
+          implementationCost: implementation,
+          annualMaintenanceMin,
+          annualMaintenanceMax,
+          monthlyMaintenanceMin,
+          monthlyMaintenanceMax,
+          monthlyOperatingMin: roundMoney(monthlyMaintenanceMin + payload.monthlyHostingCostMin + payload.monthlyAiCostMin),
+          monthlyOperatingBase: roundMoney(average(monthlyMaintenanceMin, monthlyMaintenanceMax) + monthlyHostingBase + payload.monthlyAiCostBase),
+          monthlyOperatingMax: roundMoney(monthlyMaintenanceMax + payload.monthlyHostingCostMax + payload.monthlyAiCostMax),
+          firstYearCostMin: roundMoney(implementation + annualMaintenanceMin + 12 * payload.monthlyHostingCostMin + 12 * payload.monthlyAiCostMin),
+          firstYearCostBase: roundMoney(implementation + average(annualMaintenanceMin, annualMaintenanceMax) + 12 * monthlyHostingBase + 12 * payload.monthlyAiCostBase),
+          firstYearCostMax: roundMoney(implementation + annualMaintenanceMax + 12 * payload.monthlyHostingCostMax + 12 * payload.monthlyAiCostMax)
+        };
+      })
+    };
+  }
+
   form.addEventListener("submit", async event => {
     event.preventDefault();
     errorBox.textContent = "";
@@ -78,17 +152,14 @@
       ]
     };
 
-    try {
-      const response = await fetch("/api/custos/otimizar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || data.detail || "Confira as faixas e os valores informados.");
-      render(data);
-    } catch (error) {
-      errorBox.textContent = error.message || "Não foi possível calcular os cenários.";
+    if (payload.annualMaintenancePercentMin > payload.annualMaintenancePercentMax
+        || payload.monthlyHostingCostMin > payload.monthlyHostingCostMax
+        || payload.monthlyAiCostMin > payload.monthlyAiCostBase
+        || payload.monthlyAiCostBase > payload.monthlyAiCostMax) {
+      errorBox.textContent = "Confira as faixas: mínimo deve ser menor ou igual à base, e a base menor ou igual ao máximo.";
+      return;
     }
+
+    render(simulate(payload));
   });
 })();
