@@ -8,13 +8,13 @@
             <form id="formLoginUsuario"  method="post">
                 <div class="mb-3">
                     <label class="form-label">Email</label>
-                    <input type="text"name="email" class="form-control" id="inputEmailLogin">
+                    <input type="email" name="email" autocomplete="username" required class="form-control" id="inputEmailLogin">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Senha</label>
                     <label class="esqueciSenha">Esqueci minha senha</label>
                     <div class="input-group">
-                        <input type="password" name="senha" class="form-control" id="inputSenhaLogin">
+                        <input type="password" name="senha" autocomplete="current-password" required class="form-control" id="inputSenhaLogin">
 
                         <a class="btn btn-outline-secondary" onclick="alternarOlho()" id="toggleSenha">
                             <i class="bi bi-eye" id="iconeOlho"></i>
@@ -31,5 +31,5 @@
     </div>
 
 
-    <script src="/public/js/script.js"></script>
+    <script src="/public/js/script.js?v=auth1"></script>
     <script src="/public/js/loginEstacoes.js"></script>

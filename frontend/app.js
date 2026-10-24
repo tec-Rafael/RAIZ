@@ -61,6 +61,7 @@ app.use("/public", express.static(path.join(__dirname, "public"), {
 }));
 
 app.use(cookieParser());
+app.use(require("./middleware/autenticacao").mesmaOrigem);
 
 app.use(express.json({ limit: 10485760, inflate: true, strict: false })); // http://expressjs.com/en/api.html#express.json
 app.use(express.urlencoded({ extended: true })); // http://expressjs.com/en/api.html#express.urlencoded
@@ -106,6 +107,7 @@ app.use("/funcionario", require("./routes/funcionario"));
 app.use("/api/funcionario", require("./routes/api/funcionarioApi"));
 app.use("/api/utilizacao-ia", require("./routes/api/utilizacaoIaApi"));
 app.use("/api/dashboard", require("./routes/api/dashboardApi"));
+app.use("/api/jardim", require("./routes/api/jardimApi"));
 
 
 // Depois de registrados todos os caminhos das rotas e seus

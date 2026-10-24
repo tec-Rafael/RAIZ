@@ -24,14 +24,17 @@ import org.springframework.data.domain.Pageable;
 public class UtilizacaoIAService {
 
     private final UtilizacaoIARepository repository;
+    private final br.com.raiz.usuario.service.SessaoService sessoes;
 
-    public UtilizacaoIAService(UtilizacaoIARepository repository) {
+    public UtilizacaoIAService(UtilizacaoIARepository repository,br.com.raiz.usuario.service.SessaoService sessoes) {
         this.repository = repository;
+        this.sessoes = sessoes;
     }
 
     @Transactional(readOnly = true)
     public Slice<Response> listar(Pageable pageable) {
-        return repository.findAll(pageable)
+        var u=sessoes.atual();
+        return repository.listarPermitidos(u.admin(),u.employeeId(),u.gestor()?u.companyId():null,u.gestor()?u.departmentId():null,pageable)
                 .map(this::toResponse);
     }
 

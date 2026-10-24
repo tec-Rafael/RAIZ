@@ -7,5 +7,6 @@ package br.com.raiz.usuario.domain;
  */
 public enum Posicao {
     COLABORADOR,
-    GESTOR
+    GESTOR,
+    ADMINISTRADOR
 }

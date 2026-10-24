@@ -1,4 +1,4 @@
-/* AMS calculado no backend. Perfis e identidades continuam demonstrativos. */
+/* AMS calculado no backend; identidade e permissões vêm da sessão Java. */
 (() => {
  'use strict';
  const $=id=>document.getElementById('rd'+id);
@@ -7,7 +7,7 @@
  const date=s=>s.split('-').reverse().join('/');
  const names={ams:'AMS',security:'Segurança',governance:'Governança',finops:'FinOps',literacy:'AI Literacy',delivery:'Delivery'};
  const colors={ams:'#1e7349',security:'#6588a8',governance:'#a88848',finops:'#8d6ab3',literacy:'#d32e5e',delivery:'#64a095'};
- const state={users:[],filters:null,data:null,charts:{},epoch:0,controller:null,page:0};
+ const state={filters:null,data:null,charts:{},epoch:0,controller:null,page:0};
  let searchTimer,technicalController;
  function options(el,items,selected){el.replaceChildren(...items.map(x=>new Option(x.nome,x.id)));if(items.some(x=>String(x.id)===String(selected)))el.value=selected;}
  function unique(people,key,label){return [...new Map(people.map(p=>[p[key],{id:p[key],nome:label(p)}])).values()].filter(x=>x.id!=null).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));}
@@ -17,6 +17,7 @@
   state.controller?.abort();state.controller=new AbortController();
   const r=await fetch('/api/dashboard/ams'+route+'?'+new URLSearchParams(params),{signal:state.controller.signal});
   const body=await r.json().catch(()=>null);
+  if(r.status===401){window.location.assign('/login');throw new Error('Sua sessão expirou.');}
   if(!r.ok)throw new Error(body?.detail||body?.message||(typeof body==='string'?body:'Falha ao consultar a API ('+r.status+').'));
   return body;
  }
@@ -25,20 +26,17 @@
  async function init(){
   loading('Conectando à base de dados…');
   try{
-   state.users=await api('/usuarios');if(!state.users.length)throw new Error('Não há colaboradores cadastrados.');
-   options($('ActorCompany'),unique(state.users,'companyId',p=>p.empresa),[...state.users].sort((a,b)=>a.companyId.localeCompare(b.companyId))[0].companyId);
-   $('ActorCompany').disabled=false;actors();await loadFilters();
+   await loadFilters();
   }catch(e){error(e,init);}
  }
- function actors(){const people=state.users.filter(p=>p.companyId===$('ActorCompany').value);const old=$('Usuario').value;options($('Usuario'),people,people.some(p=>p.id===old)?old:[...people].sort((a,b)=>a.id.localeCompare(b.id))[0]?.id);$('Usuario').disabled=false;}
  async function loadFilters(){
   const epoch=invalidate();$('Content').hidden=true;$('Filters').hidden=true;loading('Preparando o escopo da visão…');
   try{
-   const f=await api('/filtros',{perfil:$('Perfil').value,usuarioId:$('Usuario').value});if(epoch!==state.epoch)return;
+   const f=await api('/filtros');if(epoch!==state.epoch)return;
    state.filters=f;const role=$('Perfil').value;
    $('ActiveRole').textContent='Visão '+(role==='colaborador'?'do colaborador':role==='gestor'?'do gestor':'do administrador');
    options($('Empresa'),role==='administrador'?[{id:'',nome:'Todas as empresas'},...unique(f.pessoas,'companyId',p=>p.empresa)]:[{id:f.usuario.companyId,nome:f.usuario.empresa}]);
-   $('Empresa').disabled=role!=='administrador';$('GestorField').hidden=role==='colaborador';$('AreaField').hidden=role==='colaborador';
+   $('Empresa').disabled=role!=='administrador';$('GestorField').hidden=role!=='administrador';$('AreaField').hidden=role==='colaborador';
    options($('Periodo'),f.periodos.map(p=>({id:p.id,nome:'P'+p.id+' · '+p.dias+' dias'+(p.parcial?' (parcial)':'')})),5);
    if(!f.periodos.length)throw new Error('Ainda não há registros de uso para definir os períodos.');
    $('Gestor').replaceChildren();$('Area').replaceChildren();$('Pessoa').replaceChildren();
@@ -49,6 +47,15 @@
  }
  function cascade(from){
   const f=state.filters,role=$('Perfil').value;let people=f.pessoas;
+  if(role==='gestor'){
+   const u=f.usuario,old=$('Pessoa').value;
+   options($('Empresa'),[{id:u.companyId,nome:u.empresa}],u.companyId);$('Empresa').disabled=true;
+   options($('Gestor'),[{id:u.departmentId?u.id:'',nome:u.nome}]);$('Gestor').disabled=true;
+   options($('Area'),[{id:u.departmentId||'',nome:u.departamento||'Sem departamento'}]);$('Area').disabled=true;
+   people=people.filter(p=>p.id===u.id||(p.companyId===u.companyId&&u.departmentId&&p.departmentId===u.departmentId));
+   choices($('Pessoa'),people.map(p=>({id:p.id,nome:p.nome+(p.id===u.id?' (eu)':'')})),'Toda a minha equipe',old);$('Pessoa').disabled=false;
+   return;
+  }
   if($('Empresa').value)people=people.filter(p=>p.companyId===$('Empresa').value);
   if(from==='company'){
    const managers=people.filter(p=>p.posicao?.toLowerCase()==='gestor'||(role==='gestor'&&p.id===f.usuario.id));
@@ -65,7 +72,7 @@
   if(role==='colaborador'){options($('Pessoa'),people,f.usuario.id);$('Pessoa').disabled=true;}
   else{choices($('Pessoa'),people.map(p=>({id:p.id,nome:p.nome+(p.id===f.usuario.id?' (eu)':'')})),'Todos os colaboradores',old);$('Pessoa').disabled=role==='administrador'&&!$('Empresa').value;}
  }
- function params(){return{perfil:$('Perfil').value,usuarioId:$('Usuario').value,companyId:$('Empresa').value,gestorId:$('Gestor').value,departmentId:$('Area').value,employeeId:$('Pessoa').value,periodo:$('Periodo').value,page:state.page,size:10,busca:$('Search').value,ordem:$('Order').value};}
+ function params(){return{perfil:$('Perfil').value,companyId:$('Empresa').value,gestorId:$('Gestor').value,departmentId:$('Area').value,employeeId:$('Pessoa').value,periodo:$('Periodo').value,page:state.page,size:10,busca:$('Search').value,ordem:$('Order').value};}
  async function load(tableOnly=false){
   const epoch=invalidate();if(!tableOnly)$('Content').hidden=true;loading(tableOnly?'Atualizando colaboradores…':'Calculando AMS e evolução dos cinco períodos…');
   $('Prev').disabled=true;$('Next').disabled=true;
@@ -85,7 +92,7 @@
   $('PeriodBadge').textContent='P'+p.id+' · '+p.dias+' dias'+(p.parcial?' · parcial':'');
   $('Criterion').textContent=d.criterio;
   const previous=p.id>1?d.evolucao[p.id-2].resumo.nota:null;
-  $('Kpis').innerHTML=metricCard(person?'Minha nota AMS':'AMS médio',r.nota==null?'Indisponível':fmt(r.nota,2)+' / 100',person?(d.pessoal.desenvolvedor?'Desenvolvedor · 5 dimensões':'Demais profissionais · 4 dimensões'):'Peso igual por colaborador com AMS disponível')+metricCard('Variação entre períodos',p.id===1?'Primeiro período':variation(r.nota,previous),'Em relação a P'+Math.max(1,p.id-1),'Mesma regra por perfil profissional')+metricCard('Cobertura do AMS',fmt(r.validos,0)+' / '+fmt(r.pessoas,0),'Colaboradores com resultado disponível',fmt(r.semAms,0)+' sem AMS')+metricCard('Notas de dimensão ausentes',fmt(r.notasAusentes,0)+' / '+fmt(r.dimensoesAplicaveis,0),'Ausência original, incluindo AI Literacy',r.dimensoesAplicaveis?fmt(100*r.notasAusentes/r.dimensoesAplicaveis,1)+'% das dimensões aplicáveis':'Sem pessoas neste recorte');
+  $('Kpis').innerHTML=metricCard(person?(person.id===state.filters.usuario.id?'Minha nota AMS':'Nota AMS individual'):'AMS médio',r.nota==null?'Indisponível':fmt(r.nota,2)+' / 100',person?(d.pessoal.desenvolvedor?'Desenvolvedor · 5 dimensões':'Demais profissionais · 4 dimensões'):'Peso igual por colaborador com AMS disponível')+metricCard('Variação entre períodos',p.id===1?'Primeiro período':variation(r.nota,previous),'Em relação a P'+Math.max(1,p.id-1),'Mesma regra por perfil profissional')+metricCard('Cobertura do AMS',fmt(r.validos,0)+' / '+fmt(r.pessoas,0),'Colaboradores com resultado disponível',fmt(r.semAms,0)+' sem AMS')+metricCard('Notas de dimensão ausentes',fmt(r.notasAusentes,0)+' / '+fmt(r.dimensoesAplicaveis,0),'Ausência original, incluindo AI Literacy',r.dimensoesAplicaveis?fmt(100*r.notasAusentes/r.dimensoesAplicaveis,1)+'% das dimensões aplicáveis':'Sem pessoas neste recorte');
   renderDimensions();$('Team').hidden=role==='colaborador'||!!person;
   $('ComparisonSection').hidden=role==='colaborador'||!!person;
   options($('Group'),role==='administrador'?[{id:'empresas',nome:'Empresas'},{id:'areas',nome:'Áreas'}]:[{id:'areas',nome:'Áreas'}],$('Group').value);
@@ -117,7 +124,7 @@
   state.charts[id]?.destroy();
   if(!window.Chart){$(id).hidden=true;document.querySelectorAll('details').forEach(x=>x.open=true);return;}
   $(id).hidden=false;
-  state.charts[id]=new Chart($(id),{type,data,options:{responsive:true,maintainAspectRatio:false,animation:matchMedia('(prefers-reduced-motion: reduce)').matches?false:{duration:200},plugins:{legend:{display:type==='line',position:'bottom',labels:{boxWidth:10,font:{size:10}}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{min:0,max:type==='line'?100:undefined,grid:{color:'#edf0e8'},ticks:{font:{size:10}}}},...extra}});
+  state.charts[id]=new Chart($(id),{type,data,options:{responsive:true,maintainAspectRatio:false,resizeDelay:80,animation:matchMedia('(prefers-reduced-motion: reduce)').matches?false:{duration:200},plugins:{legend:{display:type==='line',position:'bottom',maxHeight:95,labels:{boxWidth:10,font:{size:10},generateLabels:chart=>Chart.defaults.plugins.legend.labels.generateLabels(chart).map(x=>({...x,text:x.text.length>24?x.text.slice(0,23)+'…':x.text}))}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{min:0,max:type==='line'?100:undefined,grid:{color:'#edf0e8'},ticks:{font:{size:10}}}},...extra}});
  }
  function charts(){
   const d=state.data,series=$('Series').value,keys=series==='all'?['ams',...d.resumo.dimensoes.filter(x=>x.validos+x.ausentes>0).map(x=>x.id)]:series==='ams'?['ams']:['ams',series];
@@ -139,7 +146,7 @@
   const bars=sorted.slice(0,12),lines=sorted.slice(0,6);
   $('ComparisonWrap').style.height=Math.max(275,bars.length*32)+'px';
   $('ComparisonNote').textContent='Barras: até 12 maiores notas do período. Evolução: até 6 maiores notas do período. A tabela abaixo contém todas as organizações do recorte, incluindo notas ausentes.';
-  draw('Comparison','bar',{labels:bars.map(x=>x.nome),datasets:[{label:names[metric],data:bars.map(x=>pointValue(x.evolucao[d.periodo.id-1],metric)),backgroundColor:'#77986a',borderRadius:4}]},{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{min:0,max:100},y:{ticks:{autoSkip:false,font:{size:10}},grid:{display:false}}}});
+  draw('Comparison','bar',{labels:bars.map(x=>x.nome),datasets:[{label:names[metric],data:bars.map(x=>pointValue(x.evolucao[d.periodo.id-1],metric)),backgroundColor:'#77986a',borderRadius:4}]},{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{min:0,max:100},y:{ticks:{autoSkip:false,font:{size:10},callback:function(v){const s=this.getLabelForValue(v);return s.length>20?s.slice(0,19)+'…':s;}},grid:{display:false}}}});
   const palette=['#1e7349','#6588a8','#d32e5e','#a88848','#8d6ab3','#64a095','#38668e','#a14e36'];
   draw('OrganizationEvolution','line',{labels:d.evolucao.map(x=>'P'+x.periodo.id),datasets:lines.map((g,i)=>dataset(g.nome,g.evolucao.map(x=>pointValue(x,metric)),palette[i%palette.length]))});
   $('ComparisonTable').innerHTML=table(['Organização',...d.evolucao.map(x=>'P'+x.periodo.id+' · '+names[metric]),'AMS válidos / pessoas','Notas ausentes / aplicáveis'],sorted.map(g=>{const a=g.evolucao[d.periodo.id-1].resumo;return[g.nome,...g.evolucao.map(x=>fmt(pointValue(x,metric),2)),a.validos+'/'+a.pessoas,a.notasAusentes+'/'+a.dimensoesAplicaveis];}));
@@ -151,15 +158,15 @@
   $('PageInfo').textContent=page.totalElements+' resultados · página '+(page.page+1)+' de '+Math.max(1,Math.ceil(page.totalElements/page.size));
   $('Prev').disabled=page.page===0;$('Next').disabled=(page.page+1)*page.size>=page.totalElements;
   $('PeopleChartWrap').hidden=$('Perfil').value==='colaborador';
-  draw('PeopleChart','bar',{labels:page.content.map(l=>l.pessoa.nome+(l.calculo.nota==null?' · AMS indisponível':'')),datasets:[{label:'AMS',data:page.content.map(l=>l.calculo.nota),backgroundColor:'#7f9f6c',borderRadius:4}]},{plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{min:0,max:100}}});
+  $('PeopleChartWrap').style.height=Math.max(280,page.content.length*34+45)+'px';
+  draw('PeopleChart','bar',{labels:page.content.map(l=>l.pessoa.nome+(l.calculo.nota==null?' · AMS indisponível':'')),datasets:[{label:'AMS',data:page.content.map(l=>l.calculo.nota),backgroundColor:'#7f9f6c',borderRadius:4}]},{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{min:0,max:100},y:{ticks:{autoSkip:false,font:{size:10},callback:function(v){const s=this.getLabelForValue(v);return s.length>19?s.slice(0,18)+'…':s;}}}}});
  }
  async function loadTechnical(){
   const epoch=state.epoch,query=params(),f=state.filters;
   technicalController?.abort();technicalController=new AbortController();
   if(!query.companyId){$('TechnicalContent').innerHTML='<p class="rdNotice">Selecione uma empresa para consultar o uso de IA e as entregas.</p>';return;}
-  const ref=f.pessoas.find(p=>p.companyId===query.companyId);
   const manager=f.pessoas.find(p=>p.id===query.gestorId);
-  const p={perfil:query.perfil,usuarioId:query.perfil==='administrador'?ref.id:f.usuario.id,periodo:query.periodo,
+  const p={companyId:query.companyId,periodo:query.periodo,
    escopo:query.employeeId?'pessoal':query.perfil==='gestor'?'equipe':query.departmentId||manager?'area':'empresa',
    employeeId:query.employeeId,departmentId:query.departmentId||manager?.departmentId||''};
   $('TechnicalContent').innerHTML='<div class="rdLoading">Consultando uso e entregas…</div>';
@@ -167,14 +174,12 @@
    const r=await fetch('/api/dashboard/resumo?'+new URLSearchParams(p),{signal:technicalController.signal});const d=await r.json();
    if(!r.ok)throw new Error(d.message||'Não foi possível consultar o detalhamento técnico.');if(epoch!==state.epoch)return;
    const m=d.metricas;
-   $('TechnicalContent').innerHTML='<div class="rdQualityMetrics">'+[['Requisições',m.requisicoes],['Tokens',m.tokens],['Issues concluídas',m.issues],['PRs integrados',m.prs]].map(([label,value])=>'<div class="rdSmallMetric">'+esc(label)+'<strong>'+fmt(value,0)+'</strong></div>').join('')+'</div><div class="rdCharts"><div><h3 class="amsSubheading">Requisições de IA por dia corrido</h3><div class="rdCanvas"><canvas id="rdTechnicalEvolution" role="img" aria-label="Requisições por dia nos cinco períodos"></canvas></div></div><div><h3 class="amsSubheading">Requisições por ferramenta</h3><div class="rdCanvas"><canvas id="rdTechnicalTools" role="img" aria-label="Uso de IA por ferramenta"></canvas></div></div></div><details><summary>Ver uso e entregas em tabela</summary>'+table(['Período','Requisições','Tokens','Issues','PRs'],d.evolucao.map(x=>['P'+x.periodo.id,fmt(x.metricas.requisicoes,0),fmt(x.metricas.tokens,0),fmt(x.metricas.issues,0),fmt(x.metricas.prs,0)]))+table(['Ferramenta','Requisições'],d.ferramentas.map(x=>[x.nome,fmt(x.requisicoes,0)]))+'</details>';
+   $('TechnicalContent').innerHTML='<div class="rdQualityMetrics">'+[['Requisições',m.requisicoes],['Tokens',m.tokens],['Issues concluídas',m.issues],['PRs integrados',m.prs]].map(([label,value])=>'<div class="rdSmallMetric">'+esc(label)+'<strong>'+fmt(value,0)+'</strong></div>').join('')+'</div><div class="rdCharts"><div><h3 class="amsSubheading">Requisições de IA por dia corrido</h3><div class="rdCanvas"><canvas id="rdTechnicalEvolution" role="img" aria-label="Requisições por dia nos cinco períodos"></canvas></div></div><div><h3 class="amsSubheading">Requisições por ferramenta</h3><div class="rdCanvas"><canvas id="rdTechnicalTools" role="img" aria-label="Uso de IA por ferramenta"></canvas></div></div></div><details><summary>Ver uso e entregas em tabela</summary><div class="rdTableWrap" tabindex="0" role="region" aria-label="Uso e entregas por período">'+table(['Período','Requisições','Tokens','Issues','PRs'],d.evolucao.map(x=>['P'+x.periodo.id,fmt(x.metricas.requisicoes,0),fmt(x.metricas.tokens,0),fmt(x.metricas.issues,0),fmt(x.metricas.prs,0)]))+'</div><div class="rdTableWrap" tabindex="0" role="region" aria-label="Uso por ferramenta">'+table(['Ferramenta','Requisições'],d.ferramentas.map(x=>[x.nome,fmt(x.requisicoes,0)]))+'</div></details>';
    draw('TechnicalEvolution','line',{labels:d.evolucao.map(x=>'P'+x.periodo.id),datasets:[dataset('Requisições/dia',d.evolucao.map(x=>x.metricas.requisicoes/x.periodo.dias),'#1e7349')]},{scales:{y:{beginAtZero:true}}});
    draw('TechnicalTools','bar',{labels:d.ferramentas.map(x=>x.nome),datasets:[{label:'Requisições',data:d.ferramentas.map(x=>x.requisicoes),backgroundColor:'#7f9f6c'}]});
   }catch(e){if(e.name!=='AbortError'&&epoch===state.epoch)$('TechnicalContent').innerHTML='<p class="rdNotice">'+esc(e.message)+'</p>';}
  }
  $('Technical').addEventListener('toggle',()=>{if($('Technical').open&&state.data)loadTechnical();});
- $('Perfil').addEventListener('change',()=>{if(state.users.length)loadFilters();});
- $('ActorCompany').addEventListener('change',()=>{actors();loadFilters();});$('Usuario').addEventListener('change',loadFilters);
  for(const [id,from]of[['Empresa','company'],['Gestor','manager'],['Area','area']])$(id).addEventListener('change',()=>{cascade(from);state.page=0;load();});
  for(const id of['Pessoa','Periodo'])$(id).addEventListener('change',()=>{state.page=0;load();});
  $('Self').addEventListener('click',()=>{$('Empresa').value=state.filters.usuario.companyId;cascade('company');$('Pessoa').value=state.filters.usuario.id;state.page=0;$('Search').value='';load();});
@@ -183,5 +188,6 @@
  $('Search').addEventListener('input',()=>{clearTimeout(searchTimer);state.controller?.abort();state.page=0;searchTimer=setTimeout(()=>load(true),300);});
  $('Order').addEventListener('change',()=>{state.page=0;load(true);});
  $('Prev').addEventListener('click',()=>{state.page--;load(true);});$('Next').addEventListener('click',()=>{state.page++;load(true);});
+ document.addEventListener('toggle',event=>{if(event.target.tagName==='DETAILS'&&event.target.open)requestAnimationFrame(()=>Object.values(state.charts).filter(c=>event.target.contains(c.canvas)).forEach(c=>c.resize()));},true);
  init();
 })();

@@ -1,6 +1,6 @@
 # Dashboard AMS
 
-O dashboard calcula o AMS por colaborador e período a partir do PostgreSQL e oferece três visões demonstrativas. A interface mostra as notas originais, as notas usadas, as ausências, os pesos efetivos e a contribuição de cada dimensão.
+O dashboard calcula o AMS por colaborador e período a partir do PostgreSQL e oferece três visões conforme a sessão autenticada. A interface mostra as notas originais, as notas usadas, as ausências, os pesos efetivos e a contribuição de cada dimensão.
 
 ## Execução
 
@@ -66,9 +66,9 @@ Empresa → gestor → departamento → colaborador → período. Os filtros seg
 - Gestor: própria pessoa e funcionários do próprio departamento na própria empresa. Equipe continua equivalendo a departamento.
 - Administrador: pode comparar todas as empresas, filtrar gestores, áreas e colaboradores e consultar sua própria nota.
 
-O backend rejeita filtros fora do recorte da visão selecionada com HTTP 403. Gestores de filtro são funcionários cadastrados com posição GESTOR; na visão demonstrada como gestor, a própria pessoa de referência também pode representar esse papel. A estrutura não tem histórico de vínculos, então departamentos e cargos são os do cadastro atual.
+O backend rejeita filtros fora do recorte da visão selecionada com HTTP 403. Gestores de filtro são funcionários cadastrados com posição GESTOR. A identidade e o cargo usados na autorização vêm exclusivamente da sessão validada pelo Java. A estrutura não tem histórico de vínculos, então departamentos e cargos são os do cadastro atual.
 
-A troca de identidade/perfil continua sendo demonstração, conforme acordado. Não estabelece autenticação real: a identidade pode ser trocada no seletor. O catálogo de pessoas de referência serve a essa demonstração. Não se deve interpretar a seleção de perfil como uma autorização de produção.
+O seletor de identidade/perfil foi substituído pela sessão autenticada. Os dados continuam simulados, mas a autorização por cargo é aplicada no Java. Parâmetros `perfil` e `usuarioId` enviados pelo cliente não alteram a identidade nem ampliam permissões. Veja [autenticação](autenticacao.md).
 
 ## Agregação e apresentação
 
@@ -85,9 +85,9 @@ A troca de identidade/perfil continua sendo demonstração, conforme acordado. N
 
 | Rota | Resposta |
 | --- | --- |
-| `GET /api/dashboard/ams/usuarios` | Catálogo de identidades para demonstração, sem credenciais |
-| `GET /api/dashboard/ams/filtros?perfil=gestor&usuarioId=C01-E0001` | Pessoa de referência, pessoas disponíveis e períodos |
-| `GET /api/dashboard/ams?perfil=administrador&usuarioId=C01-E0001&periodo=5` | Resumo AMS, composição pessoal quando aplicável, evolução, empresas/áreas, destaques, distribuição e tabela paginada |
+| `GET /api/dashboard/ams/usuarios` | Pessoas permitidas pela sessão, sem credenciais |
+| `GET /api/dashboard/ams/filtros` | Pessoa autenticada, pessoas disponíveis e períodos |
+| `GET /api/dashboard/ams?periodo=5` | Resumo AMS, composição pessoal quando aplicável, evolução, empresas/áreas, destaques, distribuição e tabela paginada |
 | `GET /score/ams/{employeeId}?periodo=5` | Pessoa, período e cálculo AMS completo |
 
 As três rotas de dashboard possuem proxy Express. Parâmetros de filtro adicionais: `companyId`, `gestorId`, `departmentId`, `employeeId`. Parâmetros da tabela: `page` (zero-based), `size` (1–100), `busca` (até 150 caracteres), `ordem=ams|nome`. As rotas técnicas anteriores e `/score/ai-literacy`, `/score/governance`, `/score/security-incidents`, `/score/finops` e `/score/delivery` continuam disponíveis.

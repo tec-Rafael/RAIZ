@@ -1,20 +1,12 @@
-<link rel="stylesheet" href="/public/css/dashboard.css?v=ams3">
+<link rel="stylesheet" href="/public/css/dashboard.css?v=responsive4">
 <div class="raizDash">
-  <aside class="rdSidebar" aria-label="Navegação principal">
-    <a class="rdBrand" href="/" aria-label="RAIZ início"><img src="/public/img/logo.png" alt="" width="44" height="44"><span>rAIz<span class="rdBrandDot">.</span></span></a>
-    <span class="rdNavLabel">WORKSPACE</span>
-    <a class="rdNav active" href="/dashboard" aria-current="page"><i class="bi bi-grid-1x2" aria-hidden="true"></i> Maturidade AMS</a>
-    <a class="rdNav" href="/funcionario/listar"><i class="bi bi-people" aria-hidden="true"></i> Colaboradores</a>
-    <a class="rdNav" href="/funcionario/criar"><i class="bi bi-person-plus" aria-hidden="true"></i> Cadastrar</a>
-    <div class="rdSidebarFoot"><span class="rdLive"></span> Inteligência para evoluir<br><small>Maturidade no uso de IA</small></div>
-  </aside>
+  <%- include('../comum/sidebar', { pagina: 'dashboard' }) %>
   <main class="rdMain">
     <header class="rdHeader"><div><p class="rdEyebrow">RAIZ / AMS ANALYTICS</p><h1>Cada dimensão, uma evolução.</h1><p class="rdMuted">Acompanhe maturidade, entenda as notas e encontre oportunidades de desenvolvimento.</p></div><span class="rdBadge"><span class="rdLive"></span> Dados do banco</span></header>
-    <section class="rdDemo" aria-label="Contexto da demonstração">
-      <div><strong id="rdActiveRole">Visão do colaborador</strong><p>Troca de identidade e perfil para demonstração</p></div>
-      <label>Visão<select id="rdPerfil"><option value="colaborador">Colaborador</option><option value="gestor">Gestor</option><option value="administrador">Administrador</option></select></label>
-      <label>Empresa da pessoa de referência<select id="rdActorCompany" disabled><option>Carregando…</option></select></label>
-      <label class="rdReference">Pessoa de referência<select id="rdUsuario" disabled><option>Carregando…</option></select></label>
+    <section class="rdDemo" aria-label="Usuário autenticado">
+      <div><strong id="rdActiveRole">Sua visão do dashboard</strong><p><%= usuario.nome %> · <%= usuario.email %></p></div>
+      <input type="hidden" id="rdPerfil" value="<%= usuario.posicao.toLowerCase() %>">
+      <a href="/perfil" class="rdButton rdGhost"><i class="bi bi-person-circle" aria-hidden="true"></i> Meu perfil</a>
     </section>
     <div id="rdStatus" role="status" aria-live="polite"></div>
     <section id="rdFilters" class="rdFilters" aria-label="Filtros de AMS" hidden>
@@ -54,4 +46,4 @@
   </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
-<script src="/public/js/dashboard.js?v=ams4"></script>
+<script src="/public/js/dashboard.js?v=responsive4"></script>

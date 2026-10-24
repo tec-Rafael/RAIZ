@@ -2,6 +2,9 @@ package br.com.raiz.ia.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.PositiveOrZero;
 
 public final class UtilizacaoIADto {
 
@@ -10,7 +13,7 @@ public final class UtilizacaoIADto {
 
     public record CriarRequest(
 
-            String usageId,
+            @NotBlank @Size(max = 64) String usageId,
 
             LocalDateTime timestamp,
 
@@ -26,13 +29,13 @@ public final class UtilizacaoIADto {
 
             String application,
 
-            Integer requestCount,
+            @PositiveOrZero Integer requestCount,
 
-            Integer inputTokens,
+            @PositiveOrZero Integer inputTokens,
 
-            Integer outputTokens,
+            @PositiveOrZero Integer outputTokens,
 
-            Long latencyMs,
+            @PositiveOrZero Long latencyMs,
 
             String requestStatus,
 

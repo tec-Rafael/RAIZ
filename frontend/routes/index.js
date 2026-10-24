@@ -2,8 +2,9 @@ const express = require("express");
 const wrap = require("express-async-error-wrapper");
 
 const router = express.Router();
+const { autenticar } = require("../middleware/autenticacao");
 
-router.get("/", wrap(async (req, res) => {
+router.get("/", autenticar, wrap(async (req, res) => {
   res.render("index/index", { titulo: "Início" });
 }));
 
@@ -11,11 +12,11 @@ router.get("/login", wrap(async (req, res) => {
   res.render("index/login", { titulo: "Login" });
 }));
 
-router.get("/perfil", wrap(async (req, res) => {
+router.get("/perfil", autenticar, wrap(async (req, res) => {
   res.render("index/configurarPerfil", { titulo: "Perfil" });
 }));
 
-router.get("/dashboard", wrap(async (req, res) => {
+router.get("/dashboard", autenticar, wrap(async (req, res) => {
   res.render("dashboard/index", {titulo: "Dashboard" });
 }));
 
