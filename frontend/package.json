@@ -5,7 +5,14 @@
   "scripts": {
     "start": "node app",
     "test:dashboard": "node test/dashboard-integration.cjs",
-    "test:ams": "node test/ams-integration.cjs"
+    "test:ams": "node test/ams-integration.cjs",
+    "test:jardim": "node test/jardim-integration.cjs",
+    "test:jardim:adubo": "node test/jardim-adubo-integration.cjs",
+    "test:jardim:reset": "node test/jardim-reset-integration.cjs",
+    "test:loja": "node test/loja-integration.cjs",
+    "test:jardim:ui": "node test/jardim-ui.cjs",
+    "test:auth": "node test/autenticacao-integration.cjs",
+    "test:navigation": "node test/navegacao-views.cjs && node test/navegacao-integration.cjs"
   },
   "author": "Rafael Nascimento",
   "license": "MIT",

@@ -1,0 +1,6 @@
+{
+  "desenvolvedor": {"employeeId":"C01-E0354","email":"bruno.neves@empresa.com","senha":"123456"},
+  "colaborador": {"employeeId":"C12-E0237","email":"valentina.souza@empresa.com","senha":"123456"},
+  "gestorMaior": {"employeeId":"C02-E0002","email":"ana.andrade@empresa.com","senha":"123456"},
+  "gestorMenor": {"employeeId":"C03-E0004","email":"mariana.machado@empresa.com","senha":"123456"}
+}

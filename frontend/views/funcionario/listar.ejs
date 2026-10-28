@@ -1,7 +1,13 @@
-<div class="container py-4">
+<link rel="stylesheet" href="/public/css/dashboard.css?v=nav3">
+<div class="raizDash">
+<%- include('../comum/sidebar', { pagina: 'funcionarios' }) %>
+<main class="rdMain">
+<p class="rdEyebrow">RAIZ / GESTÃO DE PESSOAS</p>
+<p><a class="rdPerson" href="/perfil">Voltar ao meu perfil</a></p>
+<div class="rdCard">
 	<h1>Funcionários</h1>
 
-	<table class="table" id="tabelaFuncionarios">
+	<div class="table-responsive"><table class="table" id="tabelaFuncionarios">
 		<thead>
 			<tr>
 				<th>ID</th>
@@ -13,13 +19,15 @@
 			</tr>
 		</thead>
 		<tbody></tbody>
-	</table>
+	</table></div>
 </div>
 
 <script>
 	async function carregar() {
 		const resposta = await fetch("/api/funcionario/listar");
-		const funcionarios = await resposta.json();
+        if (resposta.status === 401) return window.location.assign('/login');
+        if (!resposta.ok) { alert('Não foi possível consultar os funcionários.'); return; }
+        const funcionarios = await resposta.json();
 		const corpo = document.querySelector("#tabelaFuncionarios tbody");
 
 		corpo.innerHTML = "";
@@ -27,14 +35,16 @@
 		for (const f of funcionarios) {
 			const linha = document.createElement("tr");
 
-			linha.innerHTML = `
-				<td>${f.employeeId}</td>
-				<td>${f.nome}</td>
-				<td>${f.email}</td>
-				<td>${f.posicao}</td>
-				<td>${f.departmentId ?? ""}</td>
-				<td><button class="btn btn-sm btn-outline-danger" onclick="excluir('${f.employeeId}')">Excluir</button></td>
-			`;
+            for (const valor of [f.employeeId, f.nome, f.email, f.posicao, f.departmentId ?? '']) {
+                const celula = document.createElement('td'); celula.textContent = valor; linha.appendChild(celula);
+            }
+            const acoes = document.createElement('td');
+            if (f.employeeId !== 'ROOT-E0001' && f.employeeId !== <%- JSON.stringify(usuario.employeeId).replace(/</g,'\u003c') %>) {
+                const botao = document.createElement('button'); botao.type = 'button';
+                botao.className = 'btn btn-sm btn-outline-danger'; botao.textContent = 'Excluir';
+                botao.addEventListener('click', () => excluir(f.employeeId)); acoes.appendChild(botao);
+            }
+            linha.appendChild(acoes);
 
 			corpo.appendChild(linha);
 		}
@@ -55,3 +65,6 @@
 
 	carregar();
 </script>
+
+</main>
+</div>

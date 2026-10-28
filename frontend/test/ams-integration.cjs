@@ -1,9 +1,12 @@
 const assert=require('node:assert/strict');
+const {login,logout}=require('./sessao-helper.cjs');
+const contas=require('./contas-demo.json');
+let cookie;
 // Somente leitura. Requer a API e o frontend em execução.
 const origin=process.env.DASHBOARD_URL||'http://127.0.0.1:3000';
 const spring=process.env.SPRINGBOOT_URL||'http://127.0.0.1:8080';
 async function get(path,params={},status=200,base=origin){
- const r=await fetch(base+path+'?'+new URLSearchParams(params));const body=await r.json();
+ const r=await fetch(base+path+'?'+new URLSearchParams(params),{headers:{cookie}});const body=await r.json();
  assert.equal(r.status,status,JSON.stringify({path,body}));return body;
 }
 function checkCalculation(c){
@@ -21,6 +24,8 @@ function checkCalculation(c){
  }
 }
 (async()=>{
+ const admin=await login();cookie=admin.cookie;
+ try{
  const users=await get('/api/dashboard/ams/usuarios');
  const dev=users.find(p=>/Desenvolvedor|Engenheiro\(a\) de Software/i.test(p.cargo));
  const nondev=users.find(p=>p.id==='C01-E0001')||users.find(p=>/Marketing|DevOps/i.test(p.cargo));
@@ -32,7 +37,7 @@ function checkCalculation(c){
  const mean=all.empresas.reduce((s,g)=>{const r=g.evolucao[4].resumo;return s+(r.nota??0)*r.validos;},0)/all.resumo.validos;
  assert.ok(Math.abs(mean-all.resumo.nota)<1e-8);
  for(const person of [dev,nondev]){
-  const personal=await get('/api/dashboard/ams',{perfil:'colaborador',usuarioId:person.id,periodo:5});
+  const personal=await get('/api/dashboard/ams',{employeeId:person.id,periodo:5});
   personal.evolucao.forEach(p=>checkCalculation(p.pessoal));
   const individual=await get('/score/ams/'+person.id,{periodo:5},200,spring);
   assert.equal(individual.periodo.id,5);
@@ -44,15 +49,18 @@ function checkCalculation(c){
    if(existing[field]==null)assert.equal(registered,null);else assert.ok(Math.abs(existing[field]-registered)<1e-7,id+' deve manter a regra existente');
   }
  }
- const team=await get('/api/dashboard/ams',{...q,perfil:'gestor'});
- assert.equal(team.empresas.length,0);
- assert.ok(team.integrantes.content.every(l=>l.pessoa.companyId===nondev.companyId&&l.pessoa.departmentId===nondev.departmentId));
- const outside=users.find(p=>p.companyId!==nondev.companyId);
- await get('/api/dashboard/ams',{...q,perfil:'gestor',companyId:outside.companyId},403);
- await get('/api/dashboard/ams',{...q,perfil:'colaborador',employeeId:dev.id===nondev.id?outside.id:dev.id},403);
+ const gestor=await login(contas.gestorMaior.email,contas.gestorMaior.senha);cookie=gestor.cookie;
+ try{
+  const team=await get('/api/dashboard/ams',{periodo:5});
+  assert.equal(team.empresas.length,0);
+  assert.ok(team.integrantes.content.every(l=>l.pessoa.companyId===gestor.usuario.companyId&&l.pessoa.departmentId===gestor.usuario.departmentId));
+  const outside=users.find(p=>p.companyId!==gestor.usuario.companyId);
+  await get('/api/dashboard/ams',{periodo:5,perfil:'administrador',usuarioId:'ROOT-E0001',companyId:outside.companyId},403);
+ }finally{await logout(gestor.cookie);cookie=admin.cookie;}
  await get('/api/dashboard/ams',{...q,periodo:0},400);
  await get('/api/dashboard/ams',{...q,page:-1},400);
  const empty=await get('/api/dashboard/ams',{...q,busca:'__nome_inexistente__'});assert.equal(empty.integrantes.totalElements,0);
  assert.equal(empty.resumo.pessoas,all.resumo.pessoas,'Busca da tabela não muda o agregado do recorte');
  console.log(JSON.stringify({passed:true,people:all.resumo.pessoas,companies:all.empresas.length,ams:all.resumo.nota,missing:all.resumo.notasAusentes,dev:dev.id,nondev:nondev.id},null,2));
+ }finally{await logout(admin.cookie);}
 })().catch(e=>{console.error(e);process.exitCode=1;});

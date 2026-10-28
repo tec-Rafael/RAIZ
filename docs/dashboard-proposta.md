@@ -1,3 +1,5 @@
+> Documento histórico da etapa do dashboard. A autenticação posterior está descrita em [autenticacao.md](autenticacao.md).
+
 # Dashboard RAIZ: proposta de integração
 
 Status: proposta aprovada na conversa e implementada. Este arquivo preserva o diagnóstico inicial; o contrato entregue e a validação estão em [dashboard.md](dashboard.md). Equipe foi confirmada como departamento; períodos começam no primeiro log e os perfis permanecem demonstrativos.

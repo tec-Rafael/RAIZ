@@ -1,174 +1,40 @@
-<div class="menuLateral">
-
-        <i class="bi bi-list btnMenuNavbar" data-bs-toggle="offcanvas" aria-controls="offcanvasWithBothOptions"
-            data-bs-target="#offcanvasWithBothOptions">
-        </i>
-
-        <hr>
-
-        <div class="offcanvas offcanvas-start" data-bs-scroll="true" tabindex="-1" id="offcanvasWithBothOptions"
-            aria-labelledby="offcanvasWithBothOptionsLabel">
-
-            <div class="offcanvas-header">
-
-                <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">
-                    Backdrop with scrolling
-                </h5>
-
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
-                </button>
-
-            </div>
-
-            <div class="offcanvas-body">
-
-                <p><a href="funcionario/criar">Cadastrar Funcionário</a></p>
-                <p><a href="funcionario/listar">Listar Funcionário</a></p>
-                <p><a href="/dashboard">Dashboard</a></p>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div class="container-fluid divConteudo">
-
-        <div class="row">
-
-            <div class="col-12">
-
-                <h4>Seja bem vindo Rafael</h4>
-
-            </div>
-
-        </div>
-
-
-        <div class="row">
-
-            <div class="col-12">
-
-                <div class="divImgPerfil">
-
-                    <img src="/public/img/rafarofas.img" class="rounded-circle" alt="imgPerfil">
-
-                </div>
-
-                <div class="divCabecalhoPerfil">
-
-                    <p>Rafael Nascimento</p>
-                    <p>rafael@gmail.com</p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="row g-4">
-
-            <div class="col-12 col-md-6">
-
-                <div class="d-flex justify-content-end">
-
-                    <a class="btn btn-secondary">
-
-                        <i class="bi bi-pencil btnEditarPerfil"></i>
-
-                    </a>
-
-                </div>
-
-                <div>
-
-                    <label class="form-label">
-                        Nome
-                    </label>
-
-                    <input type="text" class="form-control">
-
-
-                    <label class="form-label">
-                        Email
-                    </label>
-
-                    <input type="email" class="form-control" placeholder="name@example.com">
-
-
-                    <p>Cargo:</p>
-
-                    <label class="form-label">
-                        Cargo
-                    </label>
-
-                    <input type="text" class="form-control">
-
-                </div>
-
-            </div>
-            <div class="col-12 col-md-6">
-
-                <div class="row g-3">
-
-
-                    <div class="col-12 col-md-6">
-
-                        <div class="card shadow h-100" style="background-color: #74aa9c;">
-
-                            <div class="card-body">
-
-                                <h5 class="card-title">
-                                    Chat GPT
-                                </h5>
-
-                                <div class="d-flex justify-content-center align-items-center">
-
-                                    <i class="bi bi-openai iconIaPaginaPerfil"></i>
-
-                                </div>
-
-                                <p>
-                                    Créditos Usados: -1
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div class="col-12 col-md-6">
-
-                        <div class="card shadow h-100" style="background-color: #C15F3C; color: #fff;">
-
-                            <div class="card-body">
-
-                                <h5 class="card-title">
-                                    Claude
-                                </h5>
-
-                                <div class="d-flex justify-content-center align-items-center">
-
-                                    <i class="bi bi-claude iconIaPaginaPerfil"></i>
-
-                                </div>
-
-                                <p>
-                                    Créditos Usados: -1
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
+<link rel="stylesheet" href="/public/css/dashboard.css?v=nav3">
+<link rel="stylesheet" href="/public/css/perfil.css?v=perfil2">
+<div class="raizDash perfilPage">
+  <%- include('../comum/sidebar', { pagina: 'perfil' }) %>
+  <main class="rdMain">
+    <header class="rdHeader perfilHeader">
+      <div><p class="rdEyebrow">RAIZ / MEU ESPAÇO</p><h1>Seu perfil, suas conexões.</h1><p class="rdMuted">Acompanhe como a IA participa da sua rotina.</p></div>
+      <button id="perfilSair" type="button" class="rdButton perfilLogout"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sair do sistema</button>
+    </header>
+    <p id="perfilSairStatus" class="perfilFeedback" role="alert" hidden></p>
+    <section class="rdCard perfilIdentity" aria-labelledby="perfilIdentityTitle">
+      <div class="perfilAvatar" aria-hidden="true"><%= usuario.nome.trim().split(/\s+/).filter((_,i,a) => i === 0 || i === a.length - 1).map(p => p[0]).join('').slice(0,2).toUpperCase() %></div>
+      <div class="perfilIdentityText"><p class="rdEyebrow">BEM-VINDO(A) À SUA RAIZ</p><h2 id="perfilIdentityTitle"><%= usuario.nome %></h2><p><%= usuario.email %></p></div>
+      <span class="rdBadge"><span class="rdLive" aria-hidden="true"></span><%= {COLABORADOR:'Colaborador',GESTOR:'Gestor',ADMINISTRADOR:'Administrador'}[usuario.posicao] %></span>
+      <dl class="perfilDetails">
+        <div><dt><i class="bi bi-person" aria-hidden="true"></i> Nome</dt><dd><%= usuario.nome %></dd></div>
+        <div><dt><i class="bi bi-envelope" aria-hidden="true"></i> E-mail</dt><dd><%= usuario.email %></dd></div>
+        <div><dt><i class="bi bi-briefcase" aria-hidden="true"></i> Cargo</dt><dd><%= usuario.jobRole || usuario.posicao %></dd></div>
+        <div><dt><i class="bi bi-shield-check" aria-hidden="true"></i> Perfil de acesso</dt><dd><%= {COLABORADOR:'Colaborador',GESTOR:'Gestor',ADMINISTRADOR:'Administrador'}[usuario.posicao] %></dd></div>
+      </dl>
+    </section>
+    <section aria-labelledby="perfilConsumptionTitle" class="perfilConsumption">
+      <div class="rdCardHead perfilConsumptionHead">
+        <div><p class="rdEyebrow">SEU ECOSSISTEMA DE IA</p><h2 id="perfilConsumptionTitle">Cada ferramenta, uma contribuição.</h2><p class="rdMuted">Explore seu consumo de tokens e a distribuição entre as ferramentas.</p></div>
+        <label for="perfilPeriodo">Período de análise<select id="perfilPeriodo"><option value="5">P5 · 66 dias</option><option value="historico">Todo o histórico</option></select></label>
+      </div>
+      <div class="perfilSummary" aria-label="Resumo do consumo">
+        <div class="perfilSummaryTotal"><span>Tokens consumidos</span><strong id="perfilTotal">—</strong><small>Entrada + saída no período</small></div>
+        <div><span>IA mais utilizada</span><strong id="perfilPrincipal">—</strong><small id="perfilPrincipalDetail">Participação no consumo total</small></div>
+        <div><span>Ferramentas em uso</span><strong id="perfilAtivas">—</strong><small id="perfilAtivasDetail">Com consumo no período</small></div>
+      </div>
+      <div class="perfilStatusRow"><p id="perfilStatus" role="status" aria-live="polite">Consultando consumo…</p><button id="perfilRetry" type="button" class="rdButton rdGhost" hidden>Tentar novamente</button></div>
+      <div id="perfilConsumo" class="perfilAiGrid" aria-busy="true"></div>
+      <details id="perfilSemUso" class="perfilUnused" hidden><summary id="perfilSemUsoTitle">Ferramentas sem consumo</summary><div id="perfilSemUsoItens" class="perfilUnusedGrid"></div></details>
+      <p class="rdFootnote perfilConsumptionNote"><i class="bi bi-info-circle" aria-hidden="true"></i> Tokens são unidades de processamento de texto. Os totais representam seu uso de IA, não valores em dinheiro ou uma medida de produtividade.</p>
+    </section>
+    <footer class="rdFooter">Seu crescimento começa com uma visão mais clara da sua rotina.</footer>
+  </main>
+</div>
+<script src="/public/js/perfil.js?v=perfil2"></script>

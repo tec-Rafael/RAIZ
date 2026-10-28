@@ -28,15 +28,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/utilizacao-ia")
 @Tag(name = "Utilização de IA", description = "Cadastro, consulta e remoção dos registros de utilização de IA.")
 public class IaController {
 
     private final UtilizacaoIAService service;
+    private final br.com.raiz.usuario.service.SessaoService sessoes;
 
-    public IaController(UtilizacaoIAService service) {
+    public IaController(UtilizacaoIAService service,br.com.raiz.usuario.service.SessaoService sessoes) {
         this.service = service;
+        this.sessoes = sessoes;
     }
 
     @PostMapping("/criar")
@@ -61,6 +62,7 @@ public class IaController {
             )
     })
     public Response criar(@Valid @RequestBody CriarRequest request) {
+        sessoes.exigirAdmin();
         return service.criar(request);
     }
 
@@ -107,6 +109,7 @@ public class IaController {
             @RequestParam(required = false) String companyId,
             @RequestParam(defaultValue = "5") int limite) {
 
+        sessoes.exigirAdmin();
         int limiteSeguro = Math.min(Math.max(limite, 1), 20);
 
         return service.destaques(companyId, limiteSeguro);
@@ -126,7 +129,9 @@ public class IaController {
             )
     })
     public Response buscar(@PathVariable String id) {
-        return service.buscarPorId(id);
+        var registro=service.buscarPorId(id);
+        sessoes.exigirPessoa(registro.employeeId());
+        return registro;
     }
 
     @DeleteMapping("/deletar/{id}")
@@ -147,6 +152,7 @@ public class IaController {
             )
     })
     public void deletar(@PathVariable String id) {
+        sessoes.exigirAdmin();
         service.deletar(id);
     }
 }

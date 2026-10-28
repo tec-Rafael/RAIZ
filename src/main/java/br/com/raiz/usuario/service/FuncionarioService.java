@@ -3,8 +3,6 @@ package br.com.raiz.usuario.service;
 import br.com.raiz.usuario.domain.Funcionario;
 import br.com.raiz.usuario.domain.Posicao;
 import br.com.raiz.usuario.dto.FuncionarioDto.CriarRequest;
-import br.com.raiz.usuario.dto.FuncionarioDto.LoginRequest;
-import br.com.raiz.usuario.dto.FuncionarioDto.LoginResponse;
 import br.com.raiz.usuario.dto.FuncionarioDto.Response;
 import br.com.raiz.usuario.repository.FuncionarioRepository;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -29,34 +27,22 @@ public class FuncionarioService {
 
     private final FuncionarioRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final SessaoService sessoes;
 
-    public FuncionarioService(FuncionarioRepository repository, PasswordEncoder passwordEncoder) {
+    public FuncionarioService(FuncionarioRepository repository, PasswordEncoder passwordEncoder, SessaoService sessoes) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
-    }
-
-    @Transactional(readOnly = true)
-    public LoginResponse login(LoginRequest request) {
-        Funcionario funcionario = repository.findByEmailIgnoreCase(normalizar(request.email()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos"));
-
-        if (!passwordEncoder.matches(request.senha(), funcionario.getSenha())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos");
-        }
-        if (!Boolean.TRUE.equals(funcionario.getActive())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Funcionário inativo");
-        }
-        return new LoginResponse(funcionario.getEmployeeId(), funcionario.getNome(),
-                funcionario.getEmail(), funcionario.getPosicao());
+        this.sessoes = sessoes;
     }
 
     @Transactional(readOnly = true)
     public List<Response> listar() {
-        return repository.findAll().stream().map(this::toResponse).toList();
+        return repository.findAll().stream().filter(sessoes::permite).map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
     public Response buscarPorId(String id) {
+        sessoes.exigirPessoa(id);
         return toResponse(obter(id));
     }
 
@@ -73,6 +59,11 @@ public class FuncionarioService {
      */
     @Transactional
     public Response criar(CriarRequest request) {
+        sessoes.exigirGestao();
+        var usuario = sessoes.atual();
+        if (!usuario.admin() && !usuario.employeeId().equals(request.gestorId())) throw SessaoService.proibido();
+        if (request.posicao() == Posicao.ADMINISTRADOR || request.email().trim().equalsIgnoreCase("raiz@gmail.com"))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrador reservado ao sistema");
         Funcionario gestor = obter(request.gestorId());
 
         if (gestor.getPosicao() != Posicao.GESTOR) {
@@ -120,6 +111,9 @@ public class FuncionarioService {
      */
     @Transactional
     public void deletar(String id) {
+        sessoes.exigirGestao();
+        sessoes.exigirPessoa(id);
+        if (id.equals("ROOT-E0001") || id.equals(sessoes.atual().employeeId())) throw SessaoService.proibido();
         Funcionario funcionario = obter(id);
         try {
             repository.delete(funcionario);

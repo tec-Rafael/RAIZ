@@ -27,6 +27,11 @@ public interface UtilizacaoIARepository
         extends JpaRepository<UtilizacaoIA, String> {
 
     List<UtilizacaoIA> findByEmployeeId(String employeeId);
+    @Query("SELECT l FROM UtilizacaoIA l WHERE :admin=true OR l.employeeId=:employeeId OR l.employeeId IN (SELECT f.employeeId FROM Funcionario f WHERE f.companyId=:companyId AND f.departmentId=:departmentId)")
+    org.springframework.data.domain.Slice<UtilizacaoIA> listarPermitidos(
+        @Param("admin") boolean admin,@Param("employeeId") String employeeId,
+        @Param("companyId") String companyId,@Param("departmentId") String departmentId,
+        org.springframework.data.domain.Pageable pageable);
 
     // ------------------------------------------------------------ IAs (ferramentas)
 

@@ -1,4 +1,3 @@
-const API_URL = "http://localhost:8080/api/funcionario";
 
 function alternarOlho() {
     const senha = document.getElementById("inputSenhaLogin");
@@ -11,49 +10,33 @@ function alternarOlho() {
 }
 
 
+let loginEmAndamento = false;
 async function realizarLoginUsuario() {
-
-    let formLoginUsuario = document.getElementById("formLoginUsuario");
-    let formData = new FormData(formLoginUsuario)
-
-    let email = formData.get("email")
-    let senha = formData.get("senha")
-
-
-    if (!email) {
-        alert("email invalido");
-        return;
-    } if (!senha) {
-        alert("senha invalido")
-        return;
-    }
-
-    let pessoaLogin = {
-        email: email,
-        senha: senha
-    }
-
+    const formulario = document.getElementById('formLoginUsuario');
+    if (loginEmAndamento || !formulario.reportValidity()) return;
+    const dados = new FormData(formulario);
+    const email = String(dados.get('email') || '').trim();
+    const senha = String(dados.get('senha') || '');
+    if (!email || !senha) { alert('Preencha o e-mail e a senha.'); return; }
+    const botao = formulario.querySelector('.btnLoginPlataforma');
+    loginEmAndamento = true;
+    botao.disabled = true;
     try {
-
-        let response = await fetch("/api/funcionario/login", {
-            method: "POST",
-            body: JSON.stringify(pessoaLogin),
-            headers: {
-                "content-type": "application/json"
-            }
+        const resposta = await fetch('/api/funcionario/login', {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ email, senha })
         });
-
-        if (!response.ok) {
-            alert("Ocorreu um erro ao fazer login(");
+        if (!resposta.ok) {
+            alert(resposta.status === 401 ? 'E-mail ou senha inválidos.' : resposta.status === 403 ? 'Acesso não permitido para esta conta.' : 'Não foi possível entrar. Verifique se a API está disponível.');
             return;
         }
-
-        window.location.href = "/";
-
-    } catch (ex) {
-        alert("Ocorreu um erro de rede ao fazer login " + ex.message)
+        window.location.assign('/dashboard');
+    } catch (erro) {
+        alert('Não foi possível comunicar com o servidor. Tente novamente.');
+    } finally {
+        loginEmAndamento = false;
+        botao.disabled = false;
     }
-
-
 }
 
+document.getElementById('formLoginUsuario')?.addEventListener('submit', evento => { evento.preventDefault(); realizarLoginUsuario(); });

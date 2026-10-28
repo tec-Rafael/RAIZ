@@ -16,7 +16,7 @@
             <form id="formLoginUsuario" method="post" class="loginSplit__form">
                 <div class="mb-3">
                     <label class="form-label">Email</label>
-                    <input type="text" name="email" class="form-control" id="inputEmailLogin">
+                    <input type="email" name="email" autocomplete="username" required class="form-control" id="inputEmailLogin">
                 </div>
                 <div class="mb-3">
                     <div class="loginSplit__linhaSenha">
@@ -24,7 +24,7 @@
                         <label class="esqueciSenha">Esqueci minha senha</label>
                     </div>
                     <div class="input-group">
-                        <input type="password" name="senha" class="form-control" id="inputSenhaLogin">
+                        <input type="password" name="senha" autocomplete="current-password" required class="form-control" id="inputSenhaLogin">
                         <a class="btn btn-outline-secondary" onclick="alternarOlho()" id="toggleSenha">
                             <i class="bi bi-eye" id="iconeOlho"></i>
                         </a>
@@ -39,7 +39,7 @@
 </div>
 
 
-    <script src="/public/js/script.js"></script>
+    <script src="/public/js/script.js?v=auth1"></script>
     <%# Fundo animado (ciclo da árvore) e título animado. ?v= = cache-busting (estáticos com maxAge de 30 dias). %>
     <script src="/public/js/loginEstacoes.js?v=3"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>

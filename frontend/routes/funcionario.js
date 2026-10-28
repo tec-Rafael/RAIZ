@@ -2,6 +2,8 @@ const express = require("express");
 const wrap = require("express-async-error-wrapper");
 
 const router = express.Router();
+const { autenticar, gestao } = require("../middleware/autenticacao");
+router.use(autenticar, gestao);
 
 router.get("/", wrap(async (req, res) => {
 	res.redirect("/funcionario/listar");

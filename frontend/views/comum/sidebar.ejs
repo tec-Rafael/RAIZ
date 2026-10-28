@@ -1,0 +1,13 @@
+<aside class="rdSidebar" aria-label="Navegação principal">
+  <a class="rdBrand" href="/" aria-label="RAIZ início"><img src="/public/img/logo.png" alt="" width="44" height="44"><span>rAIz<span class="rdBrandDot">.</span></span></a>
+  <span class="rdNavLabel">WORKSPACE</span>
+  <a class="rdNav" href="/" aria-label="Início" title="Início"><i class="bi bi-house" aria-hidden="true"></i><span>Início</span></a>
+  <a class="rdNav <%= pagina === 'dashboard' ? 'active' : '' %>" href="/dashboard" <%- pagina === 'dashboard' ? 'aria-current="page"' : '' %> aria-label="Maturidade AMS" title="Maturidade AMS"><i class="bi bi-grid-1x2" aria-hidden="true"></i><span>Maturidade AMS</span></a>
+  <a class="rdNav <%= pagina === 'perfil' ? 'active' : '' %>" href="/perfil" <%- pagina === 'perfil' ? 'aria-current="page"' : '' %> aria-label="Meu perfil" title="Meu perfil"><i class="bi bi-person-circle" aria-hidden="true"></i><span>Meu perfil</span></a>
+  <% if (pagina === 'perfil' && ['GESTOR', 'ADMINISTRADOR'].includes(usuario.posicao)) { %>
+  <span class="rdNavLabel rdManagementLabel">GESTÃO DE PESSOAS</span>
+  <a class="rdNav" href="/funcionario/listar" aria-label="Listar funcionários" title="Listar funcionários"><i class="bi bi-people" aria-hidden="true"></i><span>Listar funcionários</span></a>
+  <a class="rdNav" href="/funcionario/criar" aria-label="Cadastrar funcionário" title="Cadastrar funcionário"><i class="bi bi-person-plus" aria-hidden="true"></i><span>Cadastrar</span></a>
+  <% } %>
+  <div class="rdSidebarFoot"><span class="rdLive"></span> Inteligência para evoluir<br><small>Maturidade no uso de IA</small></div>
+</aside>

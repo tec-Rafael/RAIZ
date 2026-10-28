@@ -1,13 +1,5 @@
-/*
- * Árvore animada da home (tela de progresso).
- * Mostra o cenário do nível de desempenho atual com a árvore no estágio atual.
- * Só anima quando algo mudou desde a última visita (guardada no navegador):
- *   - nível mudou  -> transição de cenário (melhora: a partir da árvore; piora: do céu para o chão)
- *   - estágio subiu -> gotas de água + crescimento de baixo para cima (um estágio por vez)
- *   - estágio caiu  -> árvore encolhendo de cima para baixo
- * Nível e estágio vêm dos atributos data-nivel / data-estagio do canvas (valores fixos por enquanto,
- * até o backend fornecer esses dados). Também dá para chamar window.raizArvoreHome.irPara(nivel, estagio).
- */
+/* Motor visual da árvore: saúde e estágios recebidos da API do jardim.
+   Não concede moedas e não mantém estado de jogo no navegador. */
 (function () {
 	"use strict";
 
@@ -18,21 +10,42 @@
 	const NIVEIS = ["baixo", "medio", "alto", "excelente"];
 	const FUNDOS = { baixo: "/public/img/fundoSeca.webp", medio: "/public/img/fundoOutono.webp", alto: "/public/img/fundoPrimavera.webp", excelente: "/public/img/fundoVerao8.webp" };
 	const TOTAL_ESTAGIOS = 4;
-	const CHAVE_VISITA = "raiz.arvoreHome.ultimaVisita";
-	const BW = 576, BH = 324, W = BW * 4, H = BH * 4, K = 5;
-	const BASEX = W / 2 - 80 * K, BASEY = Math.round(H * 0.92) - 148 * K;
+	const BW = 576, BH = 324, W = BW * 4, H = BH * 4;
+    let K, BASEX, BASEY, visualEstagio=1;
+    function ajustarLayout() {
+        const rect=cv.getBoundingClientRect();
+        const scale=Math.max(rect.width/W,rect.height/H);
+        const altura=[14,34,74,115][visualEstagio-1],largura=[34,42,78,110][visualEstagio-1];
+        const proporcao=[.14,.30,.47,.60][visualEstagio-1];
+        K=Math.min(rect.height*proporcao/(altura*scale),rect.width*.78/(largura*scale));
+        BASEX=W/2-80*K;
+        BASEY=(rect.height*.94-(rect.height-H*scale))/scale-148*K;
+    }
+    ajustarLayout();window.addEventListener('resize',ajustarLayout);
 	const reduzirMovimento = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 	cv.width = W; cv.height = H; ctx.imageSmoothingEnabled = false;
 
-	function normalizarNivel(n) { return NIVEIS.indexOf(n) >= 0 ? n : "excelente"; }
+	function normalizarNivel(n) { return NIVEIS.indexOf(n) >= 0 ? n : "medio"; }
 	function normalizarEstagio(e) { e = parseInt(e, 10); return isNaN(e) ? 1 : Math.max(1, Math.min(TOTAL_ESTAGIOS, e)); }
 
 	// ---------------------------------------------------------------- assets
 	const assets = {};
+    const decorAssets={};
+    const DECORACOES=['flores','pedras','cogumelos','cerca','colmeia','placa'];
 	function carregarImagem(src) {
 		return new Promise(function (ok, erro) { const i = new Image(); i.onload = function () { ok(i); }; i.onerror = erro; i.src = src; });
 	}
 	async function carregar() {
+        await Promise.all(DECORACOES.map(async item=>{
+            const img=await carregarImagem('/public/img/decoracoes/'+item+'.png');
+            if(item==='flores'||item==='pedras'){
+                // Os tiles incluem grama; recorta a cor no canvas para integrar ao cenário de cada AMS.
+                const tile=document.createElement('canvas');tile.width=tile.height=16;
+                const t=tile.getContext('2d');t.drawImage(img,0,0);const pixels=t.getImageData(0,0,16,16);
+                for(let i=0;i<pixels.data.length;i+=4){const [r,g,b]=pixels.data.slice(i,i+3);if(g-r>15&&g-b>15)pixels.data[i+3]=0;}
+                t.putImageData(pixels,0,0);decorAssets[item]=tile;
+            }else decorAssets[item]=img;
+        }));
 		const bc = document.createElement("canvas"); bc.width = BW; bc.height = BH;
 		const bx = bc.getContext("2d", { willReadFrequently: true }); bx.imageSmoothingEnabled = false;
 		const tc = document.createElement("canvas"); tc.width = tc.height = 160;
@@ -74,18 +87,14 @@
 	})();
 
 	// ---------------------------------------------------------------- estado
-	const estado = { nivel: "excelente", estagio: 1 }; // estágio 1..4
+	const estado = { nivel: "medio", estagio: 1 }; // estágio 1..4
 	let fila = [];      // animações pendentes
 	let atual = null;   // animação em andamento
 	let parts = [], relampago = 0;
 
-	function salvarVisita() {
-		try { localStorage.setItem(CHAVE_VISITA, JSON.stringify({ nivel: estado.nivel, estagio: estado.estagio })); } catch (e) { /* navegador sem storage: só não lembra */ }
-	}
-	function lerVisita() {
-		try { const v = JSON.parse(localStorage.getItem(CHAVE_VISITA)); if (v && NIVEIS.indexOf(v.nivel) >= 0) return { nivel: v.nivel, estagio: normalizarEstagio(v.estagio) }; } catch (e) { }
-		return null;
-	}
+    let resolverAnimacao = null, timerAnimacao=null, decoracao = [], carregado = false;
+    let prontoResolve, prontoReject;
+    const pronto = new Promise((resolve,reject) => { prontoResolve=resolve; prontoReject=reject; });
 
 	// Monta a fila: primeiro a mudança de nível (no estágio antigo), depois os estágios um a um.
 	function planejar(nivel, estagio) {
@@ -97,7 +106,7 @@
 
 	function iniciarProxima() {
 		atual = fila.shift() || null;
-		if (!atual) { salvarVisita(); return; }
+		if (!atual) { clearTimeout(timerAnimacao); if (resolverAnimacao) { const resolver=resolverAnimacao; resolverAnimacao=null; resolver(); } return; }
 		atual.t = 0; atual.p = 0; atual.bp = 0; atual.pulo = 1; atual.fase = atual.tipo === "crescer" ? "agua" : "anim";
 		if (atual.tipo === "nivel") {
 			atual.melhora = NIVEIS.indexOf(atual.para) > NIVEIS.indexOf(atual.de);
@@ -117,7 +126,7 @@
 			a.p = suave(Math.min(1, Math.max(0, (a.t - 0.35) / 1.6))) * 1.05;
 			if (a.melhora && Math.random() < dt * 30) parts.push({ x: BASEX + (30 + Math.random() * 100) * K, y: BASEY + (150 - a.p * 130) * K, vx: (Math.random() - 0.5) * 30, vy: -60 - Math.random() * 60, cor: Math.random() < 0.5 ? "#d8ffb0" : "#fff2a8", z: K, vida: 0.9, pisca: true });
 			if (!a.melhora && Math.random() < dt * 18) parts.push({ x: BASEX + (30 + Math.random() * 100) * K, y: BASEY + (20 + a.p * 120) * K, vx: (Math.random() - 0.5) * 40, vy: 80 + Math.random() * 60, cor: "rgba(40,36,48,.8)", z: K, vida: 1.2 });
-			if (a.t > 1.95 && a.fase === "anim") { a.fase = "pulo"; a.pulo = 0; if (a.para === "baixo") relampago = 0.35; if (a.melhora) brilhos(); }
+			if (a.t > 1.95 && a.fase === "anim") { a.fase = "pulo"; a.pulo = 0; if (a.melhora) brilhos(); }
 		} else if (a.tipo === "crescer") {
 			if (a.fase === "agua" && a.t > 0.75) { a.fase = "anim"; a.t = 0; }
 			if (a.fase === "anim") { const x = Math.min(1, a.t / 1.5); a.p = suave(x) * 1.05; if (x >= 1) { a.fase = "pulo"; a.t = 0; a.pulo = 0; estado.estagio = a.para; brilhos(); } }
@@ -153,6 +162,7 @@
 	}
 
 	function desenharArvore() {
+        if(visualEstagio!==estado.estagio){visualEstagio=estado.estagio;ajustarLayout();}
 		const a = atual, e = estado.estagio - 1;
 		let pulo = 1;
 		if (a && a.fase === "pulo") { const x = Math.min(1, a.pulo / 0.45); pulo = 1 + Math.sin(x * Math.PI * 2) * (a.tipo === "crescer" || a.melhora ? 0.03 : -0.02) * (1 - x); }
@@ -167,7 +177,7 @@
 	function px(x, y, cor, z) { ctx.fillStyle = cor; ctx.fillRect(Math.round(x / z) * z, Math.round(y / z) * z, z, z); }
 
 	function desenhar() {
-		desenharFundo(); desenharArvore();
+		desenharFundo(); desenharArvore(); desenharDecoracoes();
 		for (const q of parts) {
 			if (q.pisca && Math.random() < 0.25) continue;
 			if (q.chuva) { ctx.fillStyle = q.cor; ctx.fillRect(Math.round(q.x / 4) * 4, Math.round(q.y / 4) * 4, 4, 20); continue; }
@@ -192,13 +202,12 @@
 		excelente: { taxa: 2.2, criar: function () { return { x: Math.random() * W, y: H * 0.62 + Math.random() * H * 0.3, vx: (Math.random() - 0.5) * 20, vy: -10 - Math.random() * 15, vida: 3 + Math.random() * 2, cor: "#ffe9a0", z: 4, pisca: true }; } },
 		alto: { taxa: 5, criar: function () { return { x: Math.random() * W * 1.2 - W * 0.1, y: -10, vx: 30 + Math.random() * 30, vy: 45 + Math.random() * 30, vida: 30, cor: Math.random() < 0.5 ? "#f6b8cf" : "#ffffff", z: 5, balanco: 1 }; } },
 		medio: { taxa: 4, criar: function () { return { x: -20 + Math.random() * W, y: -10, vx: 60 + Math.random() * 50, vy: 55 + Math.random() * 30, vida: 30, cor: ["#d6762c", "#a64626", "#e2963e"][Math.random() * 3 | 0], z: 6, balanco: 1.6, folha: true }; } },
-		baixo: { taxa: 90, criar: function () { return { x: Math.random() * W * 1.3 - W * 0.15, y: -20, vx: -140, vy: 900 + Math.random() * 200, vida: 2, cor: "rgba(170,175,210,.55)", z: 4, chuva: true }; } }
+		baixo: { taxa: 4, criar: function () { return { x: -20, y: H * 0.45 + Math.random() * H * 0.4, vx: 80 + Math.random() * 40, vy: -8, vida: 20, cor: "rgba(174,145,94,.35)", z: 4 }; } }
 	};
 	let acumulado = 0;
 	function atualizarParticulas(dt) {
 		const c = CLIMA[estado.nivel]; acumulado += dt * c.taxa;
 		while (acumulado > 1) { acumulado--; parts.push(c.criar()); }
-		if (estado.nivel === "baixo" && Math.random() < dt * 0.12) relampago = 0.18;
 		relampago = Math.max(0, relampago - dt * 1.4);
 		const agora = performance.now(), novas = [];
 		for (const q of parts) {
@@ -215,27 +224,46 @@
 	// ------------------------------------------------------------------ loop
 	let ultimo = performance.now();
 	function loop(agora) {
-		const dt = Math.min(0.05, (agora - ultimo) / 1000); ultimo = agora;
-		avancar(dt); atualizarParticulas(dt); desenhar();
+		const decorrido=Math.max(0,(agora-ultimo)/1000),dt=Math.min(0.05,decorrido);ultimo=agora;
+		avancar(Math.min(3,decorrido)); atualizarParticulas(dt); desenhar();
 		requestAnimationFrame(loop);
 	}
 
-	function irPara(nivel, estagio) {
-		nivel = normalizarNivel(nivel); estagio = normalizarEstagio(estagio);
-		if (reduzirMovimento) { estado.nivel = nivel; estado.estagio = estagio; salvarVisita(); desenhar(); return; }
-		if (atual) { fila = []; atual = null; } // interrompe a animação anterior e recomeça do estado mostrado
-		planejar(nivel, estagio); iniciarProxima();
-	}
-
-	window.raizArvoreHome = { irPara: irPara, estado: estado };
-
-	carregar().then(function () {
-		const nivel = normalizarNivel(cv.dataset.nivel), estagio = normalizarEstagio(cv.dataset.estagio);
-		const visita = lerVisita();
-		if (visita) { estado.nivel = visita.nivel; estado.estagio = visita.estagio; } // começa de onde o usuário viu por último
-		else { estado.nivel = nivel; estado.estagio = estagio; salvarVisita(); }   // primeira visita: sem animação
-		if (reduzirMovimento) { estado.nivel = nivel; estado.estagio = estagio; salvarVisita(); desenhar(); return; }
-		requestAnimationFrame(loop);
-		setTimeout(function () { irPara(nivel, estagio); }, 600); // dá um respiro antes de animar o que mudou
-	}).catch(function (e) { console.warn("Árvore da home não carregou:", e); });
+    function desenharDecoracoes() {
+        const ground=BASEY+148*K;
+        const scale=Math.max(cv.clientWidth/W,cv.clientHeight/H);
+        const unit=Math.min(5,cv.clientWidth/(150*scale));
+        function item(nome,x,y=0,size=16){const img=decorAssets[nome];if(img)ctx.drawImage(img,W/2+x*unit,ground+(y-size)*unit,size*unit,size*unit);}
+        for(const nome of decoracao){
+            if(nome==='flores')for(const x of [-90,-65,45,70])item(nome,x,5);
+            if(nome==='pedras')for(let i=0;i<4;i++)item(nome,-8,20+i*15);
+            if(nome==='cogumelos'){item(nome,-50,3);item(nome,36,8);}
+            if(nome==='cerca')for(const x of [-110,-94,-78,62,78,94])item(nome,x,-6);
+            if(nome==='colmeia')item(nome,-76,-5,24);
+            if(nome==='placa')item(nome,54,-2,22);
+        }
+    }
+    function irPara(nivel, estagio, {animar=true}={}) {
+        clearTimeout(timerAnimacao);
+        nivel=normalizarNivel(nivel);estagio=normalizarEstagio(estagio);
+        if (resolverAnimacao) { resolverAnimacao(); resolverAnimacao=null; }
+        fila=[];atual=null;
+        if (!animar || reduzirMovimento || document.hidden) { estado.nivel=nivel;estado.estagio=estagio;desenhar();return Promise.resolve(); }
+        return new Promise(resolve => {
+            resolverAnimacao=resolve;planejar(nivel,estagio);
+            // Animação é visual: uma aba lenta nunca pode bloquear os controles indefinidamente.
+            timerAnimacao=setTimeout(()=>{estado.nivel=nivel;estado.estagio=estagio;fila=[];atual=null;desenhar();const concluir=resolverAnimacao;resolverAnimacao=null;concluir?.();},Math.min(10000,fila.length*3000+500));
+            iniciarProxima();
+        });
+    }
+    window.raizArvoreHome = {
+        irPara, estado, pronto,
+        decorar(item) { decoracao=String(item||'').split(',').filter(x=>DECORACOES.includes(x)); if (reduzirMovimento && carregado) desenhar(); },
+        adubar() { if(!reduzirMovimento)gotas(estado.estagio); }
+    };
+    carregar().then(function () {
+        estado.nivel=normalizarNivel(cv.dataset.nivel);estado.estagio=normalizarEstagio(cv.dataset.estagio);
+        carregado=true;desenhar(); if(!reduzirMovimento)requestAnimationFrame(loop);
+        prontoResolve();
+    }).catch(function (erro) { console.warn('Árvore da home não carregou:',erro);prontoReject(new Error('Não foi possível carregar os sprites da árvore. Atualize a página.')); });
 })();

@@ -1,0 +1,71 @@
+.perfilPage .rdMain{max-width:1500px}
+.perfilHeader{margin-bottom:28px;align-items:flex-start}
+.perfilLogout{background:transparent;border:1px solid #d9dfd0;color:#6a4b48;display:inline-flex;gap:9px;align-items:center;white-space:nowrap}
+.perfilLogout:hover{background:#f6e9e2;border-color:#e3cabe}
+.perfilIdentity{display:flex;align-items:center;gap:22px;flex-wrap:wrap;padding:28px;background:linear-gradient(115deg,#fff 50%,#edf2e3)}
+.perfilAvatar{width:76px;height:76px;border-radius:24px;display:grid;place-items:center;flex-shrink:0;background:#254f38;color:#e3efc6;font-size:27px;font-weight:600;box-shadow:0 0 0 6px #e9efdf}
+.perfilIdentityText{flex:1;min-width:0}
+.perfilIdentityText h2{font-size:24px;overflow-wrap:anywhere}
+.perfilIdentityText p:last-child{font-size:13px;color:#697964;margin:0;overflow-wrap:anywhere}
+.perfilDetails{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:24px;padding-top:24px;margin:4px 0 0;border-top:1px solid #e4e9dd}
+.perfilDetails>div{min-width:0}
+.perfilDetails dt{font-size:11px;font-weight:400;color:#70816e;margin-bottom:8px}
+.perfilDetails dt i{margin-right:5px}
+.perfilDetails dd{font-size:13px;line-height:1.6;color:#2b4431;margin:0;overflow-wrap:anywhere}
+.perfilConsumption{margin:32px 0}
+.perfilConsumptionHead{align-items:center;gap:18px;margin-bottom:22px}
+.perfilConsumptionHead label{min-width:190px}
+.perfilSummary{display:grid;grid-template-columns:1.25fr 1fr .8fr;background:#edf0e1;border:1px solid #dfe5d4;border-radius:12px;overflow:hidden;margin-bottom:18px}
+.perfilSummary>div{padding:22px 26px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.perfilSummary>div+div{border-left:1px solid #dbe1cf}
+.perfilSummary span{font-size:11px;color:#61725c}
+.perfilSummary strong{font-size:23px;font-weight:600;letter-spacing:-.6px;margin:9px 0;overflow-wrap:anywhere;line-height:1.3}
+.perfilSummary .perfilSummaryTotal strong{font-size:32px;color:#285a3a}
+.perfilSummary small{font-size:10px;color:#728069;line-height:1.5}
+.perfilStatusRow{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.perfilStatusRow p{font-size:12px;color:#6b7964;margin:0;line-height:1.6}
+.perfilAiGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.perfilAiCard{--ai-accent:#477e65;--ai-tint:#eaf1e8;position:relative;overflow:hidden;border:1px solid #e0e6d8;border-radius:14px;padding:22px;background:#fff;min-width:0;display:flex;flex-direction:column}
+.perfilAiCardHead{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.perfilAiCardHead>div{min-width:0;flex:1}
+.perfilAiIcon{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;color:var(--ai-accent);background:var(--ai-tint);font-size:22px;flex-shrink:0}
+.perfilAiCard h3{font-size:15px;font-weight:600;margin:0 0 5px;overflow-wrap:anywhere}
+.perfilAiCardHead p{font-size:11px;margin:0;color:#78846e}
+.perfilAiAmount{display:block;font-size:clamp(24px,2.2vw,34px);letter-spacing:-1px;line-height:1.2;overflow-wrap:anywhere;font-weight:600}
+.perfilAiAmountLabel{display:block;color:#7b8574;font-size:11px;margin:5px 0 18px}
+.perfilAiShare{height:5px;background:#edf0e7;border-radius:8px;overflow:hidden;margin-top:auto}
+.perfilAiShare span{display:block;height:100%;border-radius:8px;background:var(--ai-accent)}
+.perfilAiSplit{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1px solid #edf0e6;padding-top:15px;margin:18px 0 0}
+.perfilAiSplit>div{min-width:0}
+.perfilAiSplit dt{font-size:10px;color:#7b8574;font-weight:400;margin-bottom:6px}
+.perfilAiSplit dd{font-size:13px;color:#38533d;margin:0;overflow-wrap:anywhere}
+.perfilAiFeatured{grid-column:span 2;background:radial-gradient(ellipse at top right,#41654a 0,transparent 65%),#224a34;color:#f3f6e8;border-color:#224a34}
+.perfilAiFeatured .perfilAiIcon{background:#ffffff14;color:#d5e4b6}
+.perfilAiFeatured .perfilAiCardHead p,.perfilAiFeatured .perfilAiAmountLabel,.perfilAiFeatured .perfilAiSplit dt{color:#c0d0b8}
+.perfilAiFeatured .perfilAiSplit dd{color:#f1f6e7}
+.perfilAiFeatured .perfilAiShare{background:#ffffff1a}
+.perfilAiFeatured .perfilAiShare span{background:#b7ce89}
+.perfilAiFeatured .perfilAiSplit{border-color:#ffffff1a}
+.perfilAiFeatured .perfilAiAmount{font-size:clamp(30px,3.2vw,46px)}
+.perfilAiHighlight{margin-left:auto;align-self:flex-start;padding:5px 9px;border-radius:30px;background:#ffffff14;color:#d9e7bf;font-size:10px;white-space:nowrap}
+.perfilAiCard[data-tone="clay"]{--ai-accent:#b06447;--ai-tint:#f7ede5}
+.perfilAiCard[data-tone="blue"]{--ai-accent:#527596;--ai-tint:#eaf0f6}
+.perfilAiCard[data-tone="plum"]{--ai-accent:#80618e;--ai-tint:#f0eaf4}
+.perfilUnused{border:1px solid #e0e5d7;border-radius:12px;padding:0 20px 18px;margin-top:20px;background:#f0f2e8}
+.perfilUnused summary{margin-top:18px;font-size:12px}
+.perfilUnusedGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+.perfilUnusedItem{display:flex;align-items:center;gap:10px;background:#ffffff99;border-radius:8px;padding:12px;font-size:12px;min-width:0}
+.perfilUnusedItem span{overflow-wrap:anywhere}
+.perfilUnusedItem small{margin-left:auto;white-space:nowrap;color:#78846e;font-size:10px}
+.perfilConsumptionNote{display:flex;gap:8px;margin-top:20px;max-width:800px}
+.perfilFeedback{background:#fff4e7;border:1px solid #e9d3b7;border-radius:9px;padding:14px;font-size:13px;color:#7b4c34}
+.perfilAiSkeleton{min-height:240px;background:linear-gradient(110deg,#edf0e5 30%,#f7f8f1 45%,#edf0e5 60%);background-size:250% 100%;animation:perfilShimmer 1.5s linear infinite;border-radius:14px}
+.perfilEmpty{grid-column:1/-1;text-align:center;background:#fff;border:1px dashed #d4deca;border-radius:12px;padding:38px 24px;color:#65785e;font-size:13px;line-height:1.8}
+.perfilEmpty i{display:block;font-size:30px;color:#7c9a6c;margin-bottom:12px}
+@keyframes perfilShimmer{to{background-position:-150% 0}}
+@media(max-width:1250px){.perfilAiGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.perfilDetails{grid-template-columns:repeat(2,minmax(0,1fr))}.perfilUnusedGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:850px){.perfilSummary{grid-template-columns:1fr 1fr}.perfilSummaryTotal{grid-column:1/-1}.perfilSummary>div:nth-child(2){border-left:0;border-top:1px solid #dbe1cf}.perfilSummary>div:nth-child(3){border-top:1px solid #dbe1cf}.perfilHeader{flex-wrap:wrap}.perfilIdentity .rdBadge{margin-left:98px}}
+@media(max-width:700px){.perfilHeader{gap:16px;margin-bottom:22px}.perfilIdentity{padding:22px;gap:18px}.perfilAvatar{width:60px;height:60px;border-radius:19px;font-size:22px}.perfilIdentityText h2{font-size:21px}.perfilIdentity .rdBadge{margin-left:78px}.perfilConsumptionHead label{width:100%}.perfilSummary>div{padding:20px}.perfilAiGrid{gap:14px}.perfilAiCard{padding:20px}.perfilDetails{gap:18px}.perfilConsumption{margin-top:26px}}
+@media(max-width:480px){.perfilAiGrid,.perfilUnusedGrid{grid-template-columns:1fr}.perfilAiFeatured{grid-column:auto}.perfilDetails{grid-template-columns:1fr}.perfilIdentity .rdBadge{margin-left:0}.perfilIdentityText{flex-basis:calc(100% - 80px)}.perfilAiHighlight{font-size:9px}.perfilSummary strong{font-size:20px}.perfilSummary>div{padding:18px 15px}.perfilLogout{min-height:44px}.perfilStatusRow{align-items:flex-start;flex-direction:column}}
+@media(prefers-reduced-motion:reduce){.perfilAiSkeleton{animation:none}}
+@media(max-width:380px){.perfilPage .rdBrand>span{display:none}.perfilPage .rdSidebar{flex-wrap:nowrap}}
