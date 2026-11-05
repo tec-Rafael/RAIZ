@@ -40,11 +40,14 @@ public class AmsBatchService {
             List<Topico> topicos=List.of(); Double delivery=null;
             if(dev) {
                 List<Fonte> grupo=cargos.get(f.pessoa().cargo());
+                // O ajuste e a nota relativa de revisão usam a mesma empresa e cargo.
+                List<Fonte> grupoReview=grupo.stream()
+                    .filter(x->Objects.equals(x.pessoa().companyId(),f.pessoa().companyId())).toList();
                 List<Double> individuais=Arrays.asList(normalizar(f.issueDias(),ISSUE_P10,ISSUE_P90,false),
                     normalizar(f.mergeDias(),MERGE_P10,MERGE_P90,false),normalizar(f.reviewRate(),REVIEW_P10,REVIEW_P90,true),
                     normalizar(f.volume(),PR_P10,PR_P90,true));
                 List<Double> relativas=Arrays.asList(relativa(f.issueDias(),grupo,Fonte::issueDias,false),
-                    relativa(f.mergeDias(),grupo,Fonte::mergeDias,false),relativa(ajustada(f,grupo),grupo,x->ajustada(x,grupo),true),
+                    relativa(f.mergeDias(),grupo,Fonte::mergeDias,false),relativa(ajustada(f,grupoReview),grupoReview,x->ajustada(x,grupoReview),true),
                     relativa(f.volume(),grupo,Fonte::volume,true));
                 Double individual=mediaDelivery(individuais),relativo=mediaDelivery(relativas);
                 if(individual==null) delivery=relativo;
