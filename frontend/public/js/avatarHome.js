@@ -5,7 +5,7 @@
  * Parado = de frente (pisca); andar e regar = de perfil. A cada evolução de estágio ele vai até a árvore
  * e rega; o crescimento espera a promessa de regar() terminar. Não tem loop próprio: o homeArvore.js chama
  * raizAvatarHome.desenhar(ctx, geo) a cada quadro, depois da árvore.
- * Tamanho: 30% da altura visível (limitado a 32% da largura e à proporção da árvore). Sombra de contato em pixel art sob os pés.
+ * Tamanho: proporcional à árvore (no desktop, 30% da altura visível). Sombra de contato em pixel art sob os pés.
  */
 (function () {
 	"use strict";
@@ -36,16 +36,14 @@
 
 	const av = { x: null, dir: 1, pose: "parado", rel: 0, espera: 4, alvo: null, rega: null };
 	let geo = null, z = 12, gotas = [], ultimo = 0;
-	// 30% da altura visível, limitado a 32% da largura e à mesma proporção em relação à árvore usada no login
-	// (z = K × 1,27). No desktop as três regras coincidem; no celular, onde a árvore é limitada pela largura,
-	// o personagem acompanha a árvore e não fica desproporcional.
-	// Quando a árvore limita o tamanho (celular e tablet), o personagem fica 10% maior que a proporção do login
-	// (ajuste pedido pelo Matteus em 12/11), sem passar da regra dos 30% da altura.
-	const AJUSTE_PROPORCAO = 1.10;
+	// Tamanho proporcional à árvore, igual em qualquer tela: z = K × RAZAO, sem arredondar.
+	// RAZAO é a proporção do desktop, onde a árvore é limitada pela altura (K = altura visível × 0,852 / 115) e o
+	// personagem ocupa 30% da altura visível (32 × z). Assim, no desktop continua com 30% da altura e, no celular,
+	// onde a árvore é limitada pela largura, encolhe junto com ela. Limite de segurança: 32% da largura.
+	const RAZAO = ALTURA * 115 / (FIG * 0.60 * 2.4 / 1.69);   // ≈ 1,265
 	function escala() {
-		const alt = Math.round(geo.visivelH * ALTURA / FIG);
-		z = Math.max(3, Math.min(alt, Math.floor(geo.visivelW * 0.32 / 16), geo.K ? Math.round(geo.K * 1.27) : Infinity));
-		if (z < alt) z = Math.min(alt, z * AJUSTE_PROPORCAO);
+		const k = geo.K || geo.visivelH * 0.60 * 2.4 / 1.69 / 115;
+		z = Math.max(2, Math.min(k * RAZAO, geo.visivelW * 0.32 / 16));
 	}
 	function limites() { const m = Math.max(6 * z, geo.visivelW / 2 - 16 * z); return [geo.W / 2 - m, geo.W / 2 + m]; }
 	function pose(p) { if (av.pose !== p) { av.pose = p; av.rel = 0; } }
