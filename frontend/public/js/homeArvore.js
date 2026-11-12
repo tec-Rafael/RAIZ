@@ -189,7 +189,7 @@
 
 	function desenhar() {
 		desenharFundo(); desenharArvore(); desenharDecoracoes();
-		if (window.raizAvatarHome) window.raizAvatarHome.desenhar(ctx, { W: W, chao: BASEY + 148 * K, visivelH: VIS_H, visivelW: VIS_W });
+		if (window.raizAvatarHome) window.raizAvatarHome.desenhar(ctx, { W: W, chao: BASEY + 148 * K, visivelH: VIS_H, visivelW: VIS_W, K: K });
 		for (const q of parts) {
 			if (q.pisca && Math.random() < 0.25) continue;
 			if (q.chuva) { ctx.fillStyle = q.cor; ctx.fillRect(Math.round(q.x / 4) * 4, Math.round(q.y / 4) * 4, 4, 20); continue; }

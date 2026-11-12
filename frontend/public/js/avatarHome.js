@@ -5,7 +5,7 @@
  * Parado = de frente (pisca); andar e regar = de perfil. A cada evolução de estágio ele vai até a árvore
  * e rega; o crescimento espera a promessa de regar() terminar. Não tem loop próprio: o homeArvore.js chama
  * raizAvatarHome.desenhar(ctx, geo) a cada quadro, depois da árvore.
- * Tamanho: 30% da altura visível (limitado a 32% da largura). Sombra de contato em pixel art sob os pés.
+ * Tamanho: 30% da altura visível (limitado a 32% da largura e à proporção da árvore). Sombra de contato em pixel art sob os pés.
  */
 (function () {
 	"use strict";
@@ -36,7 +36,17 @@
 
 	const av = { x: null, dir: 1, pose: "parado", rel: 0, espera: 4, alvo: null, rega: null };
 	let geo = null, z = 12, gotas = [], ultimo = 0;
-	function escala() { z = Math.max(3, Math.min(Math.round(geo.visivelH * ALTURA / FIG), Math.floor(geo.visivelW * 0.32 / 16))); }
+	// 30% da altura visível, limitado a 32% da largura e à mesma proporção em relação à árvore usada no login
+	// (z = K × 1,27). No desktop as três regras coincidem; no celular, onde a árvore é limitada pela largura,
+	// o personagem acompanha a árvore e não fica desproporcional.
+	// Quando a árvore limita o tamanho (celular e tablet), o personagem fica 10% maior que a proporção do login
+	// (ajuste pedido pelo Matteus em 12/11), sem passar da regra dos 30% da altura.
+	const AJUSTE_PROPORCAO = 1.10;
+	function escala() {
+		const alt = Math.round(geo.visivelH * ALTURA / FIG);
+		z = Math.max(3, Math.min(alt, Math.floor(geo.visivelW * 0.32 / 16), geo.K ? Math.round(geo.K * 1.27) : Infinity));
+		if (z < alt) z = Math.min(alt, z * AJUSTE_PROPORCAO);
+	}
 	function limites() { const m = Math.max(6 * z, geo.visivelW / 2 - 16 * z); return [geo.W / 2 - m, geo.W / 2 + m]; }
 	function pose(p) { if (av.pose !== p) { av.pose = p; av.rel = 0; } }
 	function andarAte(x, dt) {
