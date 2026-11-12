@@ -1,6 +1,7 @@
 <div class="loginSplit">
     <div class="loginSplit__animacao">
-        <canvas id="canvasLoginEstacoes" class="canvasLoginEstacoes" aria-hidden="true"></canvas>
+        <%# Avatar fixo que entra no fim do ciclo para regar a semente (o mesmo do administrador ROOT-E0001). %>
+        <canvas id="canvasLoginEstacoes" class="canvasLoginEstacoes" data-avatar='{"versao":2,"genero":"masculino","pele":"p2","olhos":"o5","cabelo":"espetado","corCabelo":"c5","facial":"nenhum","sardas":false,"camisa":"r10","calca":"k3"}' aria-hidden="true"></canvas>
     </div>
     <div class="loginSplit__painel">
         <img src="/public/img/logo.png" class="loginSplit__logo" alt="rAIz">
@@ -41,7 +42,8 @@
 
     <script src="/public/js/script.js?v=auth1"></script>
     <%# Fundo animado (ciclo da árvore) e título animado. ?v= = cache-busting (estáticos com maxAge de 30 dias). %>
-    <script src="/public/js/loginEstacoes.js?v=3"></script>
+    <script src="/public/js/avatarSprite.js?v=1"></script>
+    <script src="/public/js/loginEstacoes.js?v=9"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrambleTextPlugin.min.js"></script>

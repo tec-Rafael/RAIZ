@@ -8,7 +8,7 @@
 	const ctx = cv.getContext("2d");
 
 	const NIVEIS = ["baixo", "medio", "alto", "excelente"];
-	const FUNDOS = { baixo: "/public/img/fundoSeca.webp", medio: "/public/img/fundoOutono.webp", alto: "/public/img/fundoPrimavera.webp", excelente: "/public/img/fundoVerao8.webp" };
+	const FUNDOS = { baixo: "/public/img/fundoSeca.webp", medio: "/public/img/fundoOutono.webp", alto: "/public/img/fundoVerao8.webp", excelente: "/public/img/fundoPrimavera.webp" };
 	const TOTAL_ESTAGIOS = 4;
 	const BW = 576, BH = 324, W = BW * 4, H = BH * 4;
     let K, BASEX, BASEY, visualEstagio=1;
@@ -55,7 +55,7 @@
 			bx.clearRect(0, 0, BW, BH); bx.drawImage(fundo, 0, 0, BW, BH);
 			const sprites = [];
 			for (let e = 1; e <= TOTAL_ESTAGIOS; e++) {
-				const img = await carregarImagem("/public/img/FramesArvore/" + n + "/arvore_estagio_" + e + "_vetorial.svg");
+				const img = await carregarImagem("/public/img/FramesArvore/" + n + "/arvore_estagio_" + e + "_vetorial.svg?v=2");
 				tx.clearRect(0, 0, 160, 160); tx.drawImage(img, 0, 0, 160, 160);
 				sprites.push(tx.getImageData(0, 0, 160, 160));
 			}
@@ -199,8 +199,8 @@
 		}
 	}
 	const CLIMA = {
-		excelente: { taxa: 2.2, criar: function () { return { x: Math.random() * W, y: H * 0.62 + Math.random() * H * 0.3, vx: (Math.random() - 0.5) * 20, vy: -10 - Math.random() * 15, vida: 3 + Math.random() * 2, cor: "#ffe9a0", z: 4, pisca: true }; } },
-		alto: { taxa: 5, criar: function () { return { x: Math.random() * W * 1.2 - W * 0.1, y: -10, vx: 30 + Math.random() * 30, vy: 45 + Math.random() * 30, vida: 30, cor: Math.random() < 0.5 ? "#f6b8cf" : "#ffffff", z: 5, balanco: 1 }; } },
+		alto: { taxa: 2.2, criar: function () { return { x: Math.random() * W, y: H * 0.62 + Math.random() * H * 0.3, vx: (Math.random() - 0.5) * 20, vy: -10 - Math.random() * 15, vida: 3 + Math.random() * 2, cor: "#ffe9a0", z: 4, pisca: true }; } },
+		excelente: { taxa: 5, criar: function () { return { x: Math.random() * W * 1.2 - W * 0.1, y: -10, vx: 30 + Math.random() * 30, vy: 45 + Math.random() * 30, vida: 30, cor: Math.random() < 0.5 ? "#f6b8cf" : "#ffffff", z: 5, balanco: 1 }; } },
 		medio: { taxa: 4, criar: function () { return { x: -20 + Math.random() * W, y: -10, vx: 60 + Math.random() * 50, vy: 55 + Math.random() * 30, vida: 30, cor: ["#d6762c", "#a64626", "#e2963e"][Math.random() * 3 | 0], z: 6, balanco: 1.6, folha: true }; } },
 		baixo: { taxa: 4, criar: function () { return { x: -20, y: H * 0.45 + Math.random() * H * 0.4, vx: 80 + Math.random() * 40, vy: -8, vida: 20, cor: "rgba(174,145,94,.35)", z: 4 }; } }
 	};

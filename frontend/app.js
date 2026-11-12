@@ -108,6 +108,7 @@ app.use("/api/funcionario", require("./routes/api/funcionarioApi"));
 app.use("/api/utilizacao-ia", require("./routes/api/utilizacaoIaApi"));
 app.use("/api/dashboard", require("./routes/api/dashboardApi"));
 app.use("/api/jardim", require("./routes/api/jardimApi"));
+app.use("/api/avatar", require("./routes/api/avatarApi"));
 
 
 // Depois de registrados todos os caminhos das rotas e seus
