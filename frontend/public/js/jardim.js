@@ -11,7 +11,7 @@
  // A imagem nunca é a fonte do saldo, do inventário ou da saúde.
  const pronto=motor?motor.pronto.catch(erro=>{assetsFalharam=true;throw erro;}):Promise.reject(new Error('Motor da árvore indisponível.'));
  pronto.catch(()=>{});
- function imagem(nivel,estagio){const n=['baixo','medio','alto','excelente'].includes(nivel)?nivel:'medio';const e=Math.max(1,Math.min(4,Number(estagio)||1));return '/public/img/FramesArvore/'+n+'/arvore_estagio_'+e+'_vetorial.svg?v=2';}
+ function imagem(nivel,estagio){const n=['baixo','medio','alto','excelente'].includes(nivel)?nivel:'medio';const e=Math.max(1,Math.min(4,Number(estagio)||1));return '/public/img/FramesArvore/hd_contorno/'+n+'/arvore_estagio_'+e+'.png?v=1';}
  function data(s){return s?s.split('-').reverse().join('/'):'Dia inicial';}
  async function api(rota,{method='GET',body,signal}={}){
   const r=await fetch('/api/jardim/'+rota,{method,signal,headers:body?{'content-type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined});
