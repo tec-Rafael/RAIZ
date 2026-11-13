@@ -16,7 +16,11 @@ class JardimRegrasTest {
     @Test void ausenciaNaoViraMoedaNemArvoreSaudavel(){
         var incompleto=AmsCalculator.calcular(false,100.0,null,null,null,null,List.of());
         assertFalse(JardimRegras.coberturaSuficiente(incompleto));
-        assertEquals(0,JardimRegras.moedas(null));
+        assertEquals(2,JardimRegras.recompensaDiaria(null));
+        assertEquals(2,JardimRegras.recompensaDiaria(59.9));
+        assertEquals(4,JardimRegras.recompensaDiaria(60.0));
+        assertEquals(6,JardimRegras.recompensaDiaria(70.0));
+        assertEquals(8,JardimRegras.recompensaDiaria(85.0));
         assertTrue(JardimRegras.coberturaSuficiente(AmsCalculator.calcular(false,100.0,90.0,80.0,null,null,List.of())));
         assertFalse(JardimRegras.coberturaSuficiente(AmsCalculator.calcular(true,100.0,90.0,80.0,null,null,List.of())));
         assertTrue(JardimRegras.coberturaSuficiente(AmsCalculator.calcular(true,100.0,90.0,80.0,null,60.0,List.of())));

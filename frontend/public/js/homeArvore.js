@@ -39,13 +39,13 @@
 	// ---------------------------------------------------------------- assets
 	const assets = {};
     const decorAssets={};
-    const DECORACOES=['flores','pedras','cogumelos','cerca','colmeia','placa'];
+    const DECORACOES=['flores','pedras','cogumelos','cerca','colmeia','placa','pinheiro','presentes','passaro','esquilo'];
 	function carregarImagem(src) {
 		return new Promise(function (ok, erro) { const i = new Image(); i.onload = function () { ok(i); }; i.onerror = erro; i.src = src; });
 	}
 	async function carregar() {
         await Promise.all(DECORACOES.map(async item=>{
-            const img=await carregarImagem('/public/img/decoracoes/'+item+'.png');
+            const img=await carregarImagem('/public/img/decoracoes/'+item+(['passaro','esquilo'].includes(item)?'-frames':'')+'.png');
             if(item==='flores'||item==='pedras'){
                 // Os tiles incluem grama; recorta a cor no canvas para integrar ao cenário de cada AMS.
                 const tile=document.createElement('canvas');tile.width=tile.height=16;
@@ -259,6 +259,22 @@
             if(nome==='cerca')for(const x of [-110,-94,-78,62,78,94])item(nome,x,-6);
             if(nome==='colmeia')item(nome,-76,-5,24);
             if(nome==='placa')item(nome,54,-2,22);
+            if(nome==='pinheiro'||nome==='presentes'){
+                const size=(nome==='pinheiro'?34:18)*unit;
+                ctx.drawImage(decorAssets[nome],W/2+(nome==='pinheiro'?-.39:.28)*VIS_W,ground-size,size,size);
+            }
+            if(nome==='passaro'||nome==='esquilo'){
+                const ave=nome==='passaro';
+                const t=reduzirMovimento?0:performance.now()/1000;
+                const fase=t*(ave?.44:.32)+(ave?1.5:-1);
+                const x=W/2+Math.sin(fase)*VIS_W*.34;
+                const salto=ave?VIS_H*(.23+.055*Math.sin(t*1.8)):Math.abs(Math.sin(t*6))*unit*1.4;
+                const size=(ave?15:19)*unit;
+                const frame=reduzirMovimento?0:Math.floor(t*(ave?6:5))%2;
+                const img=decorAssets[nome];
+                ctx.save();ctx.translate(x,ground-salto);ctx.scale(Math.cos(fase)>=0?1:-1,1);
+                ctx.drawImage(img,frame*16,0,16,16,-size/2,-size,size,size);ctx.restore();
+            }
         }
     }
     function irPara(nivel, estagio, {animar=true}={}) {
