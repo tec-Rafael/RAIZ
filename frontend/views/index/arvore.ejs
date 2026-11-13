@@ -1,0 +1,24 @@
+<link rel="stylesheet" href="/public/css/trilha.css?v=4">
+<main class="trilha">
+<a class="tr-voltar" href="/" aria-label="Voltar para minha árvore" title="Voltar para minha árvore">←</a>
+<div class="tr-pagina">
+<header><h1>Árvore de habilidades</h1>
+<% if(trilha.gestor){ %><a href="/curso/criar">＋ Cadastrar curso</a><% } %></header>
+<% const niveis=[...new Set(trilha.cursos.map(c=>c.nivel))]; const atual=trilha.cursos.find(c=>!c.concluido)?.nivel; %>
+
+<% if(!niveis.length){ %><section class="tr-vazio"><img src="/public/img/trilha/semente.png" alt=""><h2>A primeira semente</h2><p>Os cursos aparecerão aqui quando o gestor publicar o primeiro nível.</p></section><% } %>
+<% for(const n of niveis){const cursos=trilha.cursos.filter(c=>c.nivel===n); %>
+<section class="tr-nivel"><h2>Nível <%= n %> <small><%= cursos.filter(c=>c.concluido).length %>/<%= cursos.length %></small></h2>
+<div class="tr-ramos"><% for(const c of cursos){ %><button type="button" class="tr-no" data-dialog="curso-<%= c.id %>" <%= c.aberto?'':'disabled' %>>
+<img src="/public/img/trilha/<%= c.logo %>.png" alt=""><strong><%= c.titulo %></strong><small><%= c.concluido?'✓ Concluído':c.aberto?'Abrir aula':'Bloqueado' %></small></button>
+<% if(c.aberto){ %><dialog id="curso-<%= c.id %>" aria-labelledby="titulo-<%= c.id %>"><button type="button" class="tr-fechar" aria-label="Fechar aula">×</button><small>NÍVEL <%= n %></small><h2 id="titulo-<%= c.id %>"><%= c.titulo %></h2><p class="tr-aula"><%= c.aula %></p>
+<% if(!c.concluido){ %><form data-rota="/api/arvore/cursos/<%= c.id %>/concluir"><fieldset><legend><%= c.pergunta %></legend><% for(const op of c.opcoes){ %><label class="tr-op"><input type="radio" name="resposta" value="<%= op %>" required> <%= op %></label><% } %></fieldset>
+<button>Concluir treinamento</button><small>+5 em AI Literacy no período atual, até 100 pontos.</small><output aria-live="polite"></output></form><% }else{ %><strong>✓ Treinamento concluído</strong><% } %></dialog><% } %><% } %></div></section><% } %>
+<details class="tr-premios"><summary>Metas e conquistas</summary><section class="tr-metas" aria-label="Metas e conquistas">
+<% for(const [nome,descricao,ok] of [
+['Primeiro broto',trilha.feitos+' / 1 curso concluído',trilha.feitos>=1],
+['Copa formada',trilha.feitos+' / 3 cursos concluídos',trilha.feitos>=3],
+['Uso consciente',Number(trilha.tokens).toLocaleString('pt-BR')+' / 100.000 tokens no período atual',trilha.tokens>0&&trilha.tokens<=100000],
+['Colheita',trilha.entregas+' / 3 PRs integrados no período atual',trilha.entregas>=3]]) { %>
+<div class="tr-meta"><strong><%= nome %></strong><span><%= descricao %></span><small><%= ok?'◆ Conquistada':'◇ Em andamento' %></small></div><% } %>
+</section></details></div></main><script src="/public/js/trilha.js?v=2"></script>

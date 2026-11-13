@@ -127,11 +127,13 @@ public class AiLiteracyService {
             pesoDisponivel += 0.20;
         }
 
-        if (pesoDisponivel == 0.0) {
-            return null;
-        }
+        return comCursos(pesoDisponivel == 0 ? null : soma / pesoDisponivel,
+            trainingRecordRepository.cursosDaArvore(employeeId, periodo.getInicio(), periodo.getFim()));
+    }
 
-        return soma / pesoDisponivel;
+    static Double comCursos(Double base, long quantidade) {
+        if (quantidade == 0) return base;
+        return Math.min(100, (base == null ? 0 : base) + 5.0 * quantidade);
     }
 
     public AiLiteracyScoreDto calcularAiLiteracy(String employeeId, Periodo periodo) {

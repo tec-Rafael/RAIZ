@@ -20,6 +20,11 @@
         const rect=cv.getBoundingClientRect();
         const scale=Math.max(rect.width/W,rect.height/H);
         K=Math.min(rect.height*PROPORCAO4/(115*scale),rect.width*.78/(110*scale));
+        const link=document.getElementById("abrirTrilha");
+        if(link){
+            link.style.width=Math.max(44,[34,42,78,110][visualEstagio-1]*K*scale)+"px";
+            link.style.height=Math.max(44,[14,34,74,115][visualEstagio-1]*K*scale)+"px";
+        }
         BASEX=W/2-80*K;
         BASEY=(rect.height*.94-(rect.height-H*scale))/scale-148*K;
         VIS_W=rect.width/scale;VIS_H=rect.height/scale;

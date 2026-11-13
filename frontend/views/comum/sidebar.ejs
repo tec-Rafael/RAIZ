@@ -9,5 +9,8 @@
   <a class="rdNav" href="/funcionario/listar" aria-label="Listar funcionários" title="Listar funcionários"><i class="bi bi-people" aria-hidden="true"></i><span>Listar funcionários</span></a>
   <a class="rdNav" href="/funcionario/criar" aria-label="Cadastrar funcionário" title="Cadastrar funcionário"><i class="bi bi-person-plus" aria-hidden="true"></i><span>Cadastrar</span></a>
   <% } %>
+  <% if (usuario.posicao === 'GESTOR' && ['perfil','cursos','funcionarios'].includes(pagina)) { %>
+  <a class="rdNav <%= pagina === 'cursos' ? 'active' : '' %>" href="/curso/criar" title="Cadastrar curso" aria-label="Cadastrar curso"><i class="bi bi-journal-plus"></i><span>Cadastrar curso</span></a>
+  <% } %>
   <div class="rdSidebarFoot"><span class="rdLive"></span> Inteligência para evoluir<br><small>Maturidade no uso de IA</small></div>
 </aside>

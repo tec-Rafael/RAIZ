@@ -16,6 +16,13 @@ public class AmsSourceRepository {
     public record Fonte(Pessoa pessoa, Double seguranca, Double governanca, Double completion,
                          Double training, Double diversity, Double custoToken, Double custoRequest,
                          Double issueDias, Double mergeDias, Double reviewRate, Double volume) { }
+    public Map<String,Long> cursosDaArvore(Periodo periodo) {
+        Map<String,Long> total = new HashMap<>();
+        jdbc.query("SELECT funcionario,count(*) FROM arvore_conclusao WHERE dia BETWEEN :inicio AND :fim GROUP BY funcionario",
+            Map.of("inicio",periodo.inicio(),"fim",periodo.fim()), (org.springframework.jdbc.core.RowCallbackHandler)
+            r -> total.put(r.getString(1),r.getLong(2)));
+        return total;
+    }
     public List<Pessoa> pessoas() {
         return jdbc.query("SELECT e.employee_id,e.nome,e.company_id,c.company_name,e.department_id,d.department_name,e.posicao,e.job_role "
             + "FROM employees e JOIN companies c ON c.company_id=e.company_id LEFT JOIN departments d ON d.department_id=e.department_id "
