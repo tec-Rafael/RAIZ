@@ -1,11 +1,14 @@
-/* Personagem do usuário no topo do dashboard, com falas montadas a partir dos dados AMS que a página já carregou.
-   dashboard.js avisa a cada renderização com o evento "raiz:dashboard" (dados, pessoa selecionada, perfil e usuário). */
+/* Personagem do usuário no topo do dashboard, com falas montadas a partir dos dados AMS que a página já carregou
+   e um campo de pergunta sempre visível, respondido pelo assistente (Java → agentes de IA em Python → Ollama).
+   dashboard.js avisa a cada renderização com o evento "raiz:dashboard" (dados, pessoa, perfil, usuário e filtros). */
 (() => {
     'use strict';
     const A = window.RaizAvatar, caixa = document.getElementById('rdHello');
     if (!A || !caixa) return;
     const canvas = document.getElementById('rdAvatar'), ctx = canvas.getContext('2d');
     const fala = document.getElementById('rdFala'), pontos = document.getElementById('rdFalaPontos'), proxima = document.getElementById('rdFalaProxima');
+    const balao = caixa.querySelector('.rdBubble'), form = document.getElementById('rdPergunta');
+    const campo = document.getElementById('rdPerguntaTexto'), enviar = document.getElementById('rdPerguntaEnviar');
     const primeiroNome = (caixa.dataset.nome || '').trim().split(/\s+/)[0] || 'você';
     const reduzir = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const fmt = n => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
@@ -42,19 +45,67 @@
     requestAnimationFrame(desenhar);
 
     // ------------------------------------------------------------ balão
-    let lista = [], atual = 0, timer = null;
+    let lista = [], atual = 0, timer = null, modo = 'dicas', filtros = {};
+    function digitar(html, depois) {
+        clearInterval(timer);
+        if (reduzir) { fala.innerHTML = html; depois?.(); return; }
+        const texto = html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+        // O texto inteiro aparece em no máximo ~1 s (60 passos), para a animação não atrasar a resposta.
+        let n = 0; fala.textContent = ''; const passo = Math.max(2, Math.ceil(texto.length / 60));
+        timer = setInterval(() => { n += passo; if (n >= texto.length) { clearInterval(timer); fala.innerHTML = html; depois?.(); return; } fala.textContent = texto.slice(0, n); }, 16);
+    }
     function mostrar(i) {
-        atual = i; clearInterval(timer);
+        modo = 'dicas'; atual = i; balao.classList.remove('rdResposta');
+        pontos.hidden = false; proxima.textContent = 'Próxima ›';
         pontos.replaceChildren(...lista.map((_, k) => { const s = document.createElement('span'); if (k === i) s.className = 'on'; return s; }));
         proxima.hidden = lista.length < 2;
-        const html = lista[i] || '';
-        if (reduzir) { fala.innerHTML = html; return; }
-        const texto = html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-        let n = 0; fala.textContent = '';
-        timer = setInterval(() => { n += 2; if (n >= texto.length) { clearInterval(timer); fala.innerHTML = html; return; } fala.textContent = texto.slice(0, n); }, 22);
+        digitar(lista[i] || '');
     }
-    proxima.addEventListener('click', () => { if (lista.length) mostrar((atual + 1) % lista.length); });
-    setInterval(() => { if (lista.length > 1 && !caixa.matches(':hover') && !caixa.contains(document.activeElement)) mostrar((atual + 1) % lista.length); }, 10000);
+    proxima.addEventListener('click', () => {
+        if (modo === 'pensando') return;
+        if (modo === 'resposta') { mostrar(0); return; }
+        if (lista.length) mostrar((atual + 1) % lista.length);
+    });
+    setInterval(() => { if (modo === 'dicas' && lista.length > 1 && !caixa.matches(':hover') && !caixa.contains(document.activeElement)) mostrar((atual + 1) % lista.length); }, 10000);
+
+    // ------------------------------------------------------------ perguntas ao assistente
+    const placeholders = { COLABORADOR: 'Pergunte sobre seus dados…', GESTOR: 'Pergunte sobre sua equipe ou seus dados…', ADMINISTRADOR: 'Pergunte sobre o recorte selecionado…' };
+    campo.placeholder = placeholders[caixa.dataset.perfil] || placeholders.COLABORADOR;
+    // Texto do modelo → HTML seguro: escapa tudo e só reconhece **negrito**.
+    const formatar = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    const nomesFontes = f => f.startsWith('metodologia') ? 'metodologia do AMS' : f.startsWith('politica:') ? 'política de IA da ' + f.slice(9) : f === 'dados' ? 'dados de uso' : f === 'perfil' ? 'perfil de uso (machine learning)' : f;
+    function emResposta(conteudo, fontes) {
+        modo = 'resposta'; balao.classList.add('rdResposta');
+        pontos.hidden = true; proxima.hidden = false; proxima.textContent = '‹ Voltar às dicas';
+        const unicas = [...new Set((fontes || []).map(nomesFontes))];
+        digitar(conteudo, () => {
+            if (unicas.length) { const nota = document.createElement('span'); nota.className = 'rdBubbleFontes'; nota.textContent = 'Com base em: ' + unicas.join(', ') + '.'; fala.append(document.createElement('br'), nota); }
+            fala.scrollTop = 0;
+        });
+    }
+    form.addEventListener('submit', async ev => {
+        ev.preventDefault();
+        const pergunta = campo.value.trim();
+        if (pergunta.length < 2 || modo === 'pensando') return;
+        modo = 'pensando'; clearInterval(timer); campo.disabled = true; enviar.disabled = true;
+        balao.classList.remove('rdResposta'); pontos.hidden = true; proxima.hidden = true;
+        fala.innerHTML = 'Analisando seus dados <span class="rdPensando" aria-hidden="true"><span></span><span></span><span></span></span>';
+        const f = filtros || {};
+        try {
+            const r = await fetch('/api/assistente/perguntar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pergunta, periodo: Number(f.periodo) || 5, companyId: f.companyId || null, gestorId: f.gestorId || null,
+                                       departmentId: f.departmentId || null, employeeId: f.employeeId || null }) });
+            if (r.status === 401) { window.location.assign('/login'); return; }
+            const corpo = await r.json().catch(() => null);
+            if (!r.ok) throw new Error(corpo?.detail || corpo?.message || 'Não consegui responder agora. Tente novamente em instantes.');
+            campo.value = '';
+            emResposta(formatar(corpo.resposta || 'Não encontrei uma resposta para essa pergunta.'), corpo.fontes);
+        } catch (erro) {
+            emResposta(esc(erro.message || 'Não consegui responder agora.'), []);
+        } finally {
+            campo.disabled = false; enviar.disabled = false; campo.focus();
+        }
+    });
 
     function variacao(nota, anterior, periodo, sujeito) {
         if (nota == null || anterior == null) return null;
@@ -99,8 +150,9 @@
     }
 
     document.addEventListener('raiz:dashboard', e => {
+        filtros = e.detail.filtros || {};
         try { lista = falas(e.detail); } catch (erro) { lista = ['Oi, ' + forte(primeiroNome) + '! Bem-vindo(a) ao seu dashboard.']; }
-        mostrar(0);
+        if (modo === 'dicas') mostrar(0);   // uma resposta aberta continua visível; as dicas novas aparecem ao voltar
     });
     lista = ['Oi, ' + forte(primeiroNome) + '! Estou buscando seus dados…'];
     caixa.hidden = false; mostrar(0);
