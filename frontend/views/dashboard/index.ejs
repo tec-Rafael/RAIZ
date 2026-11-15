@@ -1,9 +1,9 @@
 <link rel="stylesheet" href="/public/css/dashboard.css?v=responsive4">
-<link rel="stylesheet" href="/public/css/dashAvatar.css?v=2">
+<link rel="stylesheet" href="/public/css/dashAvatar.css?v=1">
 <div class="raizDash">
   <%- include('../comum/sidebar', { pagina: 'dashboard' }) %>
   <main class="rdMain">
-    <header class="rdHeader"><div><p class="rdEyebrow">RAIZ / AMS ANALYTICS</p><h1>Cada dimensão, uma evolução.</h1><p class="rdMuted">Acompanhe maturidade, entenda as notas e encontre oportunidades de desenvolvimento.</p></div><div class="rdHello" id="rdHello" data-nome="<%= usuario.nome %>" data-perfil="<%= usuario.posicao %>" hidden><div class="rdConversa"><div class="rdBubble"><p id="rdFala" aria-live="polite"></p><div class="rdBubbleRodape"><span class="rdBubblePontos" id="rdFalaPontos" aria-hidden="true"></span><button type="button" id="rdFalaProxima">Próxima ›</button></div></div><form class="rdPergunta" id="rdPergunta" autocomplete="off"><label class="visually-hidden" for="rdPerguntaTexto">Pergunta para o assistente</label><input id="rdPerguntaTexto" name="pergunta" type="text" maxlength="500" placeholder="Pergunte sobre seus dados…" required><button type="submit" id="rdPerguntaEnviar" aria-label="Enviar pergunta"><i class="bi bi-send" aria-hidden="true"></i></button></form></div><canvas id="rdAvatar" width="20" height="38" role="img" aria-label="Seu personagem" hidden></canvas></div><span class="rdBadge"><span class="rdLive"></span> Dados do banco</span></header>
+    <header class="rdHeader"><div><p class="rdEyebrow">RAIZ / AMS ANALYTICS</p><h1>Cada dimensão, uma evolução.</h1><p class="rdMuted">Acompanhe maturidade, entenda as notas e encontre oportunidades de desenvolvimento.</p></div><div class="rdHello" id="rdHello" data-nome="<%= usuario.nome %>" hidden><div class="rdBubble"><p id="rdFala" aria-live="polite"></p><div class="rdBubbleRodape"><span class="rdBubblePontos" id="rdFalaPontos" aria-hidden="true"></span><button type="button" id="rdFalaProxima">Próxima ›</button></div></div><canvas id="rdAvatar" width="20" height="38" role="img" aria-label="Seu personagem" hidden></canvas></div><span class="rdBadge"><span class="rdLive"></span> Dados do banco</span></header>
     <section class="rdDemo" aria-label="Usuário autenticado">
       <div><strong id="rdActiveRole">Sua visão do dashboard</strong><p><%= usuario.nome %> · <%= usuario.email %></p></div>
       <input type="hidden" id="rdPerfil" value="<%= usuario.posicao.toLowerCase() %>">
@@ -48,5 +48,5 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
 <script src="/public/js/avatarSprite.js?v=1"></script>
-<script src="/public/js/dashAvatar.js?v=4"></script>
-<script src="/public/js/dashboard.js?v=responsive6"></script>
+<script src="/public/js/dashAvatar.js?v=1"></script>
+<script src="/public/js/dashboard.js?v=responsive5"></script>

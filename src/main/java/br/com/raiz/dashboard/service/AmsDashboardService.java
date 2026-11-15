@@ -66,8 +66,6 @@ public class AmsDashboardService {
                 p->p.empresa()+" · "+Objects.toString(p.departamento(),"Sem departamento")),destaque,pagina,distribuicao,
             "Média aritmética dos AMS disponíveis, com peso igual por pessoa. AI Literacy ausente usa zero no AMS e continua identificada como ausente. Confira a cobertura e as notas utilizadas na composição.");
     }
-    /** Pessoas do recorte com as mesmas validações do painel (usado pelo assistente de IA). */
-    public List<Pessoa> pessoasDaConsulta(Consulta q){return selecionar(filtros(q.perfil(),q.usuarioId()),q);}
     public static List<Pessoa> permitidas(List<Pessoa> pessoas,Pessoa u,String perfil){
         if(!Set.of("colaborador","gestor","administrador").contains(perfil))throw erro("Perfil inválido.");
         return pessoas.stream().filter(p->switch(perfil){
