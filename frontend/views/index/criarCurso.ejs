@@ -1,0 +1,8 @@
+<link rel="stylesheet" href="/public/css/dashboard.css?v=nav3"><link rel="stylesheet" href="/public/css/cadastrarCurso.css">
+<div class="raizDash"><%- include('../comum/sidebar',{pagina:'cursos'}) %><main class="rdMain cadastroCurso"><a href="/arvore">← Árvore de habilidades</a><h1>Cadastrar curso</h1>
+<% const niveis=[...new Set(cursos.map(c=>c.nivel))]; %>
+<form data-rota="/api/arvore/cursos"><label>Nível<select name="nivel"><% for(const n of [...niveis,niveis.length+1]){ %><option><%= n %></option><% } %></select></label>
+<label>Logo<select name="logo"><option value="semente">Semente</option><option value="broto">Broto</option><option value="folha">Folha</option><option value="bolota">Bolota</option></select></label><label>Nome do curso<input name="titulo" maxlength="100" required></label><label>Conteúdo da aula<textarea name="aula" rows="5" maxlength="12000" required></textarea></label>
+<label>Pergunta de conclusão<input name="pergunta" maxlength="500" required></label>
+<label>Resposta correta<input name="correta" maxlength="250" required></label><label>Outra alternativa<input name="alternativa" maxlength="250" required></label>
+<button>Publicar curso</button><output aria-live="polite"></output></form></main></div><script src="/public/js/trilha.js?v=2"></script>

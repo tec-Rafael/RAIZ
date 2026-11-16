@@ -43,3 +43,9 @@
 .gardenForest{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:16px 8px;min-height:120px;border-radius:12px;background:linear-gradient(#e8efe0,#d4e0bc)}
 .gardenForest img{height:112px;max-width:100%;object-fit:contain}
 @media(max-width:360px){.gardenForest img{height:90px}.gardenForest{gap:4px;padding:12px 4px}}
+.gardenLeftActions{position:fixed;z-index:1000;left:max(18px,env(safe-area-inset-left));top:max(18px,env(safe-area-inset-top))}
+#gardenShop{background:#faf3e5;color:#514035}
+#gardenShop .gardenShopItem{border-color:#e6d6b9;background:#fffbf2}
+#gardenShop .gardenItemPreview{image-rendering:pixelated;background:#f1e8d3;border-radius:8px;object-fit:contain}
+.gardenShopRule{font-size:.85rem;color:#665444}
+@media(max-width:700px){.gardenLeftActions{left:max(12px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top))}}

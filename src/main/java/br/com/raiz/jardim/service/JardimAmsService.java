@@ -19,6 +19,9 @@ public class JardimAmsService {
     private final AmsBatchService batch;
     private final Map<String,Cache> cache=new LinkedHashMap<>();
     public JardimAmsService(DashboardRepository dashboard,AmsBatchService batch){this.dashboard=dashboard;this.batch=batch;}
+    @org.springframework.transaction.event.TransactionalEventListener
+    @org.springframework.core.annotation.Order(1)
+    public synchronized void aposCurso(br.com.raiz.arvore.ArvoreController.CursoConcluido evento) { cache.clear(); }
     public List<Periodo> periodos(){return DashboardService.periodos(dashboard.primeiraData());}
     public Periodo periodo(int id){
         if(id<1||id>5)throw erro("Período deve estar entre 1 e 5.");

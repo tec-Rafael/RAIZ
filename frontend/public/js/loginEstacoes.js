@@ -6,9 +6,13 @@
  *   3. quando eles saem da tela, transição para o Médio — as folhas começam a cair;
  *   4. uma folha laranja da própria árvore se solta, cai devagar e, quando toca o chão,
  *      o Baixo se espalha a partir dela;
- *   5. no Baixo a árvore regride até a semente, a chuva para e uma gota d'água cai;
- *   6. quando a gota toca a semente, transição para o Excelente e o ciclo recomeça.
- * Usa os SVGs de /public/img/FramesArvore/<nivel>/ e os fundos /public/img/fundo*.webp.
+ *   5. no Baixo a árvore regride até a semente e a chuva para;
+ *   6. um avatar entra pela esquerda, rega a semente e segue andando até sumir pela direita;
+ *      a água do regador dispara a transição para o Excelente e o ciclo recomeça.
+ *      (Avatar fixo, configurado em data-avatar no canvas; sem ele ou sem window.RaizAvatar,
+ *      volta a gota d'água que cai do céu.)
+ * Usa as árvores de /public/img/FramesArvore/hd_contorno/<nivel>/ (2x, com contorno e grama nos estágios 3 e 4)
+ * e os fundos /public/img/fundo*.webp.
  * (window.RAIZ_ASSETS, se existir, troca os caminhos por data-URIs — usado só no protótipo.)
  */
 (function () {
@@ -18,7 +22,7 @@
 	if (!cv) return;
 	const ctx = cv.getContext("2d");
 
-	const FUNDOS = { baixo: "/public/img/fundoSeca.webp", medio: "/public/img/fundoOutono.webp", alto: "/public/img/fundoPrimavera.webp", excelente: "/public/img/fundoVerao8.webp" };
+	const FUNDOS = { baixo: "/public/img/fundoSeca.webp", medio: "/public/img/fundoOutono.webp", alto: "/public/img/fundoVerao8.webp", excelente: "/public/img/fundoPrimavera.webp" };
 	const NIVEIS = ["baixo", "medio", "alto", "excelente"];
 	const BW = 576, BH = 324, H = BH * 4;          // fundos nativos 576x324; o canvas trabalha a 4x
 	const reduzirMovimento = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -32,16 +36,17 @@
 	async function carregar() {
 		const bc = document.createElement("canvas"); bc.width = BW; bc.height = BH;
 		const bx = bc.getContext("2d", { willReadFrequently: true }); bx.imageSmoothingEnabled = false;
-		const tc = document.createElement("canvas"); tc.width = tc.height = 160;
+		const tc = document.createElement("canvas"); tc.width = tc.height = TAM;
 		const tx = tc.getContext("2d", { willReadFrequently: true }); tx.imageSmoothingEnabled = false;
 		for (const n of NIVEIS) {
 			const fundo = await carregarImagem(FUNDOS[n]);
 			bx.clearRect(0, 0, BW, BH); bx.drawImage(fundo, 0, 0, BW, BH);
 			const sprites = [];
 			for (let e = 1; e <= 4; e++) {
-				const img = await carregarImagem("/public/img/FramesArvore/" + n + "/arvore_estagio_" + e + "_vetorial.svg");
-				tx.clearRect(0, 0, 160, 160); tx.drawImage(img, 0, 0, 160, 160);
-				sprites.push(tx.getImageData(0, 0, 160, 160));
+				// árvores novas: 2x, com contorno colorido e, nos estágios 3 e 4, grama na base nas cores do chão de cada fundo
+				const img = await carregarImagem("/public/img/FramesArvore/hd_contorno/" + n + "/arvore_estagio_" + e + ".png?v=1");
+				tx.clearRect(0, 0, TAM, TAM); tx.drawImage(img, 0, 0, TAM, TAM);
+				sprites.push(tx.getImageData(0, 0, TAM, TAM));
 			}
 			const fc = document.createElement("canvas"); fc.width = BW; fc.height = BH;
 			fc.getContext("2d").putImageData(bx.getImageData(0, 0, BW, BH), 0, 0);
@@ -69,17 +74,19 @@
 	}
 
 	// ------------------------------------------------------ máscaras de transição
-	const T_SOBE = new Float32Array(25600), T_DESCE = new Float32Array(25600);
+	const RES = 2, TAM = 160 * RES;   // árvores em 2x: 320x320 pixels para as mesmas 160 unidades do sprite
+	const T_SOBE = new Float32Array(TAM * TAM), T_DESCE = new Float32Array(TAM * TAM);
 	const M_MELHORA = new Float32Array(BW * BH), M_PIORA = new Float32Array(BW * BH), RUIDO = new Float32Array(BW * BH);
 	const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
 	(function () {
 		let s = 7; const r = function () { return (s = (s * 16807) % 2147483647) / 2147483647; };
 		const g = []; for (let j = 0; j <= 20; j++) { g[j] = []; for (let i = 0; i <= 20; i++) g[j][i] = r(); }
-		for (let y = 0; y < 160; y++) for (let x = 0; x < 160; x++) {
+		for (let py2 = 0; py2 < TAM; py2++) for (let px2 = 0; px2 < TAM; px2++) {
+			const x = px2 / RES, y = py2 / RES, k2 = py2 * TAM + px2;
 			const gx = x / 8, gy = y / 8, i = gx | 0, j = gy | 0, u = gx - i, v = gy - j;
 			const n = (g[j][i] * (1 - u) + g[j][i + 1] * u) * (1 - v) + (g[j + 1][i] * (1 - u) + g[j + 1][i + 1] * u) * v;
-			T_SOBE[y * 160 + x] = Math.min(1, Math.max(0, (150 - y) / 128 * 0.82 + n * 0.18 + Math.abs(x - 80) / 80 * 0.06));
-			T_DESCE[y * 160 + x] = Math.min(1, Math.max(0, (y - 20) / 130 * 0.82 + n * 0.18));
+			T_SOBE[k2] = Math.min(1, Math.max(0, (150 - y) / 128 * 0.82 + n * 0.18 + Math.abs(x - 80) / 80 * 0.06));
+			T_DESCE[k2] = Math.min(1, Math.max(0, (y - 20) / 130 * 0.82 + n * 0.18));
 		}
 		const gb = []; for (let j = 0; j <= 12; j++) { gb[j] = []; for (let i = 0; i <= 20; i++) gb[j][i] = r(); }
 		for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
@@ -133,7 +140,7 @@
 		{ id: "regredir", para: 2, d: 1.3 }, { id: "pausa", d: 0.9 },
 		{ id: "regredir", para: 1, d: 1.2 },
 		{ id: "calmaria", d: 2.0 },
-		{ id: "gota", d: 30, entrar: soltarGota, fim: function () { return gota === null; } },
+		{ id: "gota", d: 30, entrar: function () { if (!entrarAvatar()) soltarGota(); }, fim: function () { return avatar ? avatar.regou : gota === null; } },
 		{ id: "nivel", para: "excelente", mascara: "melhora", d: 2.2 }
 	];
 	let passo = -1;
@@ -210,9 +217,9 @@
 	let pontoFolha = { sx: 118, sy: 66 };
 	function acharBordaCopa() {   // pixel laranja mais à direita da copa do Médio, na altura do meio da copa
 		const d = assets.medio.sprites[3].data; let melhor = null;
-		for (let y = 58; y <= 74; y++) for (let x = 159; x > 80; x--) {
-			const i = (y * 160 + x) * 4;
-			if (d[i + 3] > 200 && d[i] > 150 && d[i] > d[i + 1] + 40) { if (!melhor || x > melhor.sx) melhor = { sx: x + 2, sy: y }; break; }
+		for (let y = 58 * RES; y <= 74 * RES; y++) for (let x = TAM - 1; x > 80 * RES; x--) {
+			const i = (y * TAM + x) * 4;
+			if (d[i + 3] > 200 && d[i] > 150 && d[i] > d[i + 1] + 40) { if (!melhor || x / RES > melhor.sx - 2) melhor = { sx: x / RES + 2, sy: y / RES }; break; }
 		}
 		if (melhor) pontoFolha = melhor;
 	}
@@ -229,6 +236,73 @@
 		for (let i = 0; i < 14; i++) parts.push({ x: px(folha.sx) + aleat(-3, 3) * K, y: py(folha.sy) + aleat(-2, 1) * K, vx: aleat(-60, 140), vy: aleat(-90, -20), g: 160, cor: ["#5b4a3f", "#3e322b", "#7a6550"][Math.random() * 3 | 0], z: K, vida: aleat(0.8, 1.6) });
 		folha = null;
 	}
+	// --------------------------------------------------------- avatar visitante
+	// Entra pela esquerda, para ao lado da semente, rega (segurar -> erguer -> despejar -> baixar) e sai pela direita.
+	const AV = window.RaizAvatar || null;
+	let avatarCfg = null, avatar = null, avatarCache = {}, sombraAv = null;
+	try { avatarCfg = JSON.parse(cv.dataset.avatar || "null"); } catch (e) { avatarCfg = null; }
+	const ROTEIRO_REGA = [{ q: 0, t: 0.3 }, { q: 1, t: 0.3 }, { q: 2, t: 1.6 }, { q: 1, t: 0.25 }, { q: 0, t: 0.25 }];
+	function zAv() { return Math.max(2, Math.round(K * 1.27)); }   // mesma proporção avatar/árvore da home
+	function entrarAvatar() {
+		if (!AV || !avatarCfg) return false;
+		const z = zAv();
+		avatar = { x: -AV.W * z, alvo: TX - 14 * z, estado: "chegando", t: 0, fase: 0, rel: 0, acc: 0, regou: false, gotas: [] };
+		return true;
+	}
+	function spriteAv(e, i) {
+		const k = e + i; if (avatarCache[k]) return avatarCache[k];
+		const q = AV.quadro(avatarCfg, e, i), c = document.createElement("canvas"); c.width = AV.W; c.height = AV.H;
+		c.getContext("2d").putImageData(new ImageData(q.dados, AV.W, AV.H), 0, 0);
+		return avatarCache[k] = { c: c, bico: q.bico };
+	}
+	function elipseAv(rx, ry) {   // sombra de contato em pixel art (borda clara, miolo escuro)
+		if (sombraAv) return sombraAv;
+		const w = 2 * rx + 1, h = 2 * ry + 1, c = document.createElement("canvas"); c.width = w; c.height = h;
+		const x = c.getContext("2d"), o = x.createImageData(w, h);
+		for (let j = -ry; j <= ry; j++) for (let i = -rx; i <= rx; i++) {
+			const d = Math.pow(i / (rx + .5), 2) + Math.pow(j / (ry + .5), 2); if (d > 1) continue;
+			const p = ((j + ry) * w + i + rx) * 4; o.data[p] = 20; o.data[p + 1] = 36; o.data[p + 2] = 20; o.data[p + 3] = d <= .38 ? 107 : 66;
+		}
+		x.putImageData(o, 0, 0); return sombraAv = c;
+	}
+	function atualizarAvatar(dt) {
+		const a = avatar; if (!a) return;
+		const z = zAv(), passo = 20 * z * dt; a.rel += dt;
+		if (a.estado === "chegando") {
+			if (a.x + passo >= a.alvo) { a.x = a.alvo; a.estado = "regando"; a.fase = 0; a.t = 0; } else a.x += passo;
+		} else if (a.estado === "regando") {
+			a.t += dt;
+			if (a.t >= ROTEIRO_REGA[a.fase].t) { a.t = 0; a.fase++; if (a.fase === 3) a.regou = true; if (a.fase >= ROTEIRO_REGA.length) { a.estado = "saindo"; a.rel = 0; } }
+		} else if (a.estado === "saindo") {
+			a.x += passo; if (a.x > W + AV.W * z) avatar = null;
+		}
+		// gotas do regador: caem na semente e respingam
+		const solo = py(142);
+		for (const g of a.gotas) {
+			g.vy += 2200 * (z / 4) * dt; g.x += g.vx * dt; g.y += g.vy * dt;
+			if (g.y >= solo) {
+				g.vida = 0;
+				for (let i = 0; i < 2; i++) parts.push({ x: g.x, y: solo, vx: aleat(-70, 70) * z / 4, vy: aleat(-170, -110) * z / 4, g: 1400 * z / 4, cor: "#cdeefa", z: z, vida: 0.3 });
+				if (!a.anel && Math.abs(g.x - TX) < 14 * K) { a.anel = true; parts.push({ anel: true, x: TX, y: solo + K * 2, r: K * 2, vida: 0.7, z: K }); pulo = 0; puloForca = 0.05; }
+			}
+		}
+		a.gotas = a.gotas.filter(function (g) { return g.vida !== 0; });
+	}
+	function desenharAvatar() {
+		const a = avatar; if (!a) return;
+		const z = zAv(), chao = BASEY + 2 * K, e = a.estado === "regando" ? "regar" : "andar";
+		const i = e === "regar" ? ROTEIRO_REGA[Math.min(a.fase, 4)].q : Math.floor(a.rel * 6) % 4;
+		const s = spriteAv(e, i), w = AV.W * z, top = chao - AV.CHAO * z;
+		const el = elipseAv(8, 2);
+		ctx.drawImage(el, Math.round(a.x + z - 8.5 * z), Math.round(chao - 3.5 * z), el.width * z, el.height * z);
+		ctx.drawImage(s.c, Math.round(a.x - w / 2), Math.round(top), w, AV.H * z);
+		if (e === "regar" && s.bico && (a.fase === 1 || a.fase === 2)) {
+			a.acc += (a.dtUlt || 0) * (i === 2 ? 22 : 6);
+			while (a.acc >= 1) { a.acc--; a.gotas.push({ x: a.x - w / 2 + (s.bico[0] + .5) * z, y: top + (s.bico[1] + .5) * z, vx: (20 + Math.random() * 30) * z / 4, vy: (30 + Math.random() * 40) * z / 4 }); }
+		}
+		for (const g of a.gotas) { ctx.fillStyle = "#9fd8f0"; ctx.fillRect(Math.round(g.x / z) * z, Math.round(g.y / z) * z, z, 2 * z); }
+	}
+
 	function soltarGota() {
 		gota = { x: TX, y: -40, vy: 120, alvo: py(133) };
 	}
@@ -255,6 +329,7 @@
 				}
 			}
 		}
+		if (avatar) { avatar.dtUlt = dt; atualizarAvatar(dt); }
 		// gota d'água final
 		if (gota) {
 			gota.vy += 900 * dt; gota.y += gota.vy * dt;
@@ -268,8 +343,8 @@
 
 	// ------------------------------------------------------------- clima
 	const CLIMA = {
-		excelente: { taxa: 2.2, criar: function () { return { x: aleat(0, W), y: H * 0.6 + Math.random() * H * 0.35, vx: aleat(-10, 10), vy: aleat(-25, -10), vida: aleat(3, 5), cor: "#ffe9a0", z: 4, pisca: true }; } },
-		alto: { taxa: 4, criar: function () { return { x: aleat(-0.1, 1.1) * W, y: -10, vx: aleat(30, 60), vy: aleat(45, 75), vida: 30, cor: Math.random() < 0.5 ? "#f6b8cf" : "#ffffff", z: 5, balanco: 1 }; } },
+		alto: { taxa: 2.2, criar: function () { return { x: aleat(0, W), y: H * 0.6 + Math.random() * H * 0.35, vx: aleat(-10, 10), vy: aleat(-25, -10), vida: aleat(3, 5), cor: "#ffe9a0", z: 4, pisca: true }; } },
+		excelente: { taxa: 4, criar: function () { return { x: aleat(-0.1, 1.1) * W, y: -10, vx: aleat(30, 60), vy: aleat(45, 75), vida: 30, cor: Math.random() < 0.5 ? "#f6b8cf" : "#ffffff", z: 5, balanco: 1 }; } },
 		medio: { taxa: 3.5, criar: function () { return { x: aleat(-20, W), y: -10, vx: aleat(60, 110), vy: aleat(55, 85), vida: 30, cor: ["#d6762c", "#a64626", "#e2963e"][Math.random() * 3 | 0], z: 6, balanco: 1.6, vento: true }; } },
 		baixo: { taxa: 90, criar: function () { return { x: aleat(-0.15, 1.15) * W, y: -20, vx: -140, vy: aleat(900, 1100), vida: 2, cor: "rgba(170,175,210,.55)", z: 4, chuva: true }; } }
 	};
@@ -297,8 +372,8 @@
 	}
 
 	// --------------------------------------------------------------- desenho
-	const spr = document.createElement("canvas"); spr.width = spr.height = 160; const sx = spr.getContext("2d");
-	const sprOut = new ImageData(160, 160);
+	const spr = document.createElement("canvas"); spr.width = spr.height = TAM; const sx = spr.getContext("2d");
+	const sprOut = new ImageData(TAM, TAM);
 	const bgc = document.createElement("canvas"); bgc.width = BW; bgc.height = BH; const bgx = bgc.getContext("2d");
 	const bgOut = new ImageData(BW, BH);
 
@@ -359,11 +434,26 @@
 		ctx.fillStyle = b.cor;
 		for (let j = 0; j < fr.length; j++) for (let i = 0; i < 7; i++) if (fr[j][i] === "X") ctx.fillRect(Math.round(b.x / z) * z + (i - 3) * z, Math.round(b.y / z) * z + j * z, z, z);
 	}
+	// Scale2x de um padrão de caracteres: mesma forma, cantos arredondados, o dobro de pixels
+	function dobrar(linhas) {
+		const h = linhas.length, w = linhas[0].length, at = function (x, y) { return linhas[Math.max(0, Math.min(h - 1, y))][Math.max(0, Math.min(w - 1, x))]; }, out = [];
+		for (let y = 0; y < h; y++) {
+			let a = "", b = "";
+			for (let x = 0; x < w; x++) {
+				const P = at(x, y), A = at(x, y - 1), B = at(x + 1, y), C = at(x - 1, y), D = at(x, y + 1);
+				a += (C === A && C !== D && A !== B ? A : P) + (A === B && A !== C && B !== D ? B : P);
+				b += (D === C && D !== B && C !== A ? C : P) + (B === D && B !== A && D !== C ? D : P);
+			}
+			out.push(a, b);
+		}
+		return out;
+	}
 	const FOLHA = {
 		aberta: ["...os..", ".oobbo.", "obblbbo", "obbvbbo", ".obbbo.", "..ooo.."],
 		espelho: ["..so...", ".obboo.", "obblbbo", "obbvbbo", ".obbbo.", "..ooo.."],
 		fina: ["..os..", "..obo.", ".obbo.", ".obvo.", "..oo..", "......"]
 	};
+	Object.keys(FOLHA).forEach(function (k) { FOLHA[k] = dobrar(FOLHA[k]); });
 	function misturaCor(a, b, t) {
 		const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
 		const r = Math.round(((pa >> 16) & 255) * (1 - t) + ((pb >> 16) & 255) * t), g = Math.round(((pa >> 8) & 255) * (1 - t) + ((pb >> 8) & 255) * t), bl = Math.round((pa & 255) * (1 - t) + (pb & 255) * t);
@@ -373,16 +463,17 @@
 		const g = fo.giro === undefined ? 1 : fo.giro;
 		const fr = g > 0.35 ? FOLHA.aberta : g < -0.35 ? FOLHA.espelho : FOLHA.fina;
 		const m = fo.murcha || 0;   // murcha: laranja -> marrom acinzentado durante a transição
-		const pal = { o: misturaCor("#4a1f12", "#2a221e", m), b: misturaCor("#e8822e", "#6b5a4b", m), l: misturaCor("#ffc96e", "#8a7a60", m), v: misturaCor("#a64626", "#4a3d34", m), s: misturaCor("#5a3a22", "#3e322b", m) };
+		const pal = { o: misturaCor("#a64626", "#4a3d34", m),   // borda num laranja escuro (sem contorno preto)
+			  b: misturaCor("#e8822e", "#6b5a4b", m), l: misturaCor("#ffc96e", "#8a7a60", m), v: misturaCor("#a64626", "#4a3d34", m), s: misturaCor("#5a3a22", "#3e322b", m) };
 		// presa ou tremendo: a folha pisca um brilho suave para chamar a atenção antes de cair
 		if ((fo.estado === "presa" && fase && fase.id === "folhas" && t > 1.2) || fo.estado === "tremendo") {
 			const k = 0.5 + 0.5 * Math.sin(performance.now() / 160);
 			pal.b = misturaCor("#e8822e", "#ffb347", k); pal.l = misturaCor("#ffc96e", "#fff1b8", k);
 		}
-		const z = Math.round(K * 2);
+		const z = Math.max(1, Math.round(K));   // padrão em 2x desenhado com pixel K: mesmo tamanho de antes
 		let x = px(fo.sx), y = py(fo.sy);
 		if (fo.estado === "tremendo") x += Math.sin(fo.t * 38) * K * 0.7 * Math.min(1, fo.t * 2);
-		const ox = Math.round(x / z) * z - 3 * z, oy = Math.round(y / z) * z - 3 * z;
+		const ox = Math.round(x / z) * z - 6 * z, oy = Math.round(y / z) * z - 6 * z;
 		for (let j = 0; j < fr.length; j++) for (let i = 0; i < fr[j].length; i++) { const c = pal[fr[j][i]]; if (c) { ctx.fillStyle = c; ctx.fillRect(ox + i * z, oy + j * z, z, z); } }
 	}
 	function desenharGota(g) {
@@ -402,6 +493,7 @@
 			ctx.fillStyle = g; ctx.fillRect(TX - r, py(70) - r, r * 2, r * 2);
 		}
 		desenharArvore();
+		desenharAvatar();
 		for (const q of parts) {
 			if (q.atraso > 0) continue;
 			if (q.anel) { const c = "rgba(205,238,250," + Math.max(0, q.vida / 0.7) + ")", n = Math.max(12, Math.round(q.r / K * 1.6)); for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; quad(q.x + Math.cos(a) * q.r, q.y + Math.sin(a) * q.r * 0.3, K, c); } continue; }   // anel em pixels
@@ -434,7 +526,15 @@
 	if (window.ResizeObserver) new ResizeObserver(aoRedimensionar).observe(cv);
 	else window.addEventListener("resize", aoRedimensionar);
 
-	window.raizLoginCiclo = { cena: cena, fase: function () { return fase && fase.id; } };   // útil para depurar no console
+	window.raizLoginCiclo = {   // útil para depurar no console (e para o protótipo)
+		cena: cena, fase: function () { return fase && fase.id; },
+		avatar: function (cfg) { avatarCfg = cfg; avatarCache = {}; },
+		irParaVisita: function () {   // pula direto para o fim do ciclo (semente do Baixo, sem chuva)
+			const i = ROTEIRO.findIndex(function (f) { return f.id === "gota"; });
+			cena.nivel = "baixo"; cena.estagio = 1; chuva = 0; folha = null; gota = null; avatar = null; trans = null; passaros = [];
+			passo = i - 1; proximaFase();
+		}
+	};
 
 	carregar().then(function () {
 		layout(); pronto = true; acharBordaCopa();

@@ -1,0 +1,38 @@
+/* Personagem (avatar) no perfil: visualização e edição. Usa public/js/avatarSprite.js. */
+.perfilAvatar{position:relative;overflow:hidden}
+.perfilAvatar canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;background:#cfe0bf}
+.perfilPersonagem{margin-top:22px}
+.perfilPersonagem .rdCardHead{margin-bottom:18px}
+.perfilAvGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px;align-items:start}
+.perfilAvPalco{border:1px solid #e1e7da;border-radius:12px;overflow:hidden;background:#fafbf6}
+.perfilAvPalco canvas{display:block;width:100%;aspect-ratio:4/3;image-rendering:pixelated;background:#cfe3c4}
+.perfilAvBarra{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;flex-wrap:wrap}
+.perfilAvSeg{display:inline-flex;background:#eef1e6;border-radius:9px;padding:3px;gap:2px}
+.perfilAvSeg button{border:0;background:transparent;color:#4d6355;font:600 12px Arial,sans-serif;padding:8px 12px;border-radius:7px;cursor:pointer}
+.perfilAvSeg button[aria-pressed=true]{background:#fff;color:#1e7349;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.perfilAvIcone{min-height:36px;width:38px;padding:0;display:inline-grid;place-items:center}
+.perfilAvResumo dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px;margin:0}
+.perfilAvResumo dt{font-size:11px;font-weight:600;color:#6d7865;margin:0 0 4px}
+.perfilAvResumo dd{margin:0;font-size:14px;color:#24422f;display:flex;align-items:center;gap:8px}
+.perfilAvCor{width:16px;height:16px;border-radius:50%;box-shadow:0 0 0 1px #d6ddcf;flex-shrink:0}
+.perfilAvOrigem{font-size:12px;color:#6d7865;margin:16px 0 0;line-height:1.6}
+.perfilAvAbas{display:flex;gap:4px;border-bottom:1px solid var(--line,#e2e7dc);overflow-x:auto;margin-bottom:16px}
+.perfilAvAbas button{border:0;background:none;font:600 13px Arial,sans-serif;color:#6a7a6f;padding:10px 12px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+.perfilAvAbas button[aria-selected=true]{color:#1e7349;border-bottom-color:#1e7349}
+.perfilAvGrupo{margin-bottom:18px}
+.perfilAvGrupoTitulo{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 9px;font-size:12px;font-weight:700;color:#4b5f52}
+.perfilAvGrupoTitulo span{font-weight:400;color:#6d7865}
+.perfilAvAmostras{display:flex;flex-wrap:wrap;gap:8px}
+.perfilAvAmostra{width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #d6ddcf;cursor:pointer;padding:0}
+.perfilAvAmostra[aria-checked=true]{box-shadow:0 0 0 2px #1e7349,0 0 0 4px #d7e8dc}
+.perfilAvMinis{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
+.perfilAvMini{border:1px solid #dfe5d6;background:#f7f8f1;border-radius:11px;padding:6px 4px 7px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font:11px Arial,sans-serif;color:#4d6355}
+.perfilAvMini canvas{width:54px;height:54px;image-rendering:pixelated}
+.perfilAvMini.corpo canvas{width:44px;height:68px}
+.perfilAvMini[aria-checked=true]{border-color:#1e7349;background:#eaf3ec;box-shadow:inset 0 0 0 1px #1e7349;color:#1e7349;font-weight:700}
+.perfilAvAcoes{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line,#e2e7dc);padding-top:16px}
+.perfilAvAcoes>div{display:flex;gap:8px}
+.perfilAvStatus{font-size:12px;color:#466b4f;margin:12px 0 0;min-height:18px}
+.perfilAvStatus.erro{color:#a2452c}
+@media(max-width:1000px){.perfilAvGrid{grid-template-columns:1fr}}
+@media(max-width:520px){.perfilAvResumo dl{grid-template-columns:1fr 1fr}.perfilAvAmostra{width:30px;height:30px}.perfilAvAcoes,.perfilAvAcoes>div{width:100%}.perfilAvAcoes .rdButton{flex:1}}

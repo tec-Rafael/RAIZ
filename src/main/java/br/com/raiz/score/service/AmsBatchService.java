@@ -16,6 +16,9 @@ public class AmsBatchService {
     private final AmsSourceRepository repository;
     private record Cache(Instant validade, List<Linha> linhas) { }
     private final Map<String,Cache> cache = new LinkedHashMap<>();
+    @org.springframework.transaction.event.TransactionalEventListener
+    @org.springframework.core.annotation.Order(0)
+    public synchronized void aposCurso(br.com.raiz.arvore.ArvoreController.CursoConcluido evento) { cache.clear(); }
     public AmsBatchService(AmsSourceRepository repository) { this.repository=repository; }
 
     /** Cache interno de 30 segundos. O escopo de acesso é aplicado antes de qualquer resposta. */
@@ -23,14 +26,15 @@ public class AmsBatchService {
         String chave=periodo.inicio()+"/"+periodo.fim();
         Cache atual=cache.get(chave);
         if(atual!=null && atual.validade().isAfter(Instant.now())) return atual.linhas();
-        List<Linha> linhas=calcular(repository.carregar(periodo));
+        List<Linha> linhas=calcular(repository.carregar(periodo),repository.cursosDaArvore(periodo));
         cache.entrySet().removeIf(e->e.getValue().validade().isBefore(Instant.now()));
         if(cache.size()>=5) cache.remove(cache.keySet().iterator().next());
         cache.put(chave,new Cache(Instant.now().plusSeconds(30),linhas));
         return linhas;
     }
 
-    static List<Linha> calcular(List<Fonte> fontes) {
+    static List<Linha> calcular(List<Fonte> fontes) { return calcular(fontes,Map.of()); }
+    private static List<Linha> calcular(List<Fonte> fontes, Map<String,Long> cursos) {
         Double refToken=mediana(fontes,Fonte::custoToken),refRequest=mediana(fontes,Fonte::custoRequest);
         Map<String,List<Fonte>> cargos=fontes.stream().filter(f->AmsCalculator.desenvolvedor(f.pessoa().cargo()))
             .collect(Collectors.groupingBy(f->f.pessoa().cargo()));
@@ -62,7 +66,7 @@ public class AmsBatchService {
                     pesoTopico(individuais,pesos,i),pesoTopico(relativas,pesos,i)));
                 topicos=List.copyOf(itens);
             }
-            Double literacy=media(Arrays.asList(f.completion(),f.training(),f.diversity()),new double[]{.5,.3,.2});
+            Double literacy=AiLiteracyService.comCursos(media(Arrays.asList(f.completion(),f.training(),f.diversity()),new double[]{.5,.3,.2}), cursos.getOrDefault(f.pessoa().id(),0L));
             Double finops=media(Arrays.asList(eficiencia(refToken,f.custoToken()),eficiencia(refRequest,f.custoRequest())),new double[]{.5,.5});
             linhas.add(new Linha(f.pessoa(),AmsCalculator.calcular(dev,f.seguranca(),f.governanca(),finops,literacy,delivery,topicos)));
         }

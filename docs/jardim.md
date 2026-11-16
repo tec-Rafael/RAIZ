@@ -4,9 +4,9 @@ A home autenticada representa a jornada individual sobre os dados históricos ex
 
 ## Saúde, crescimento e economia
 
-A saúde usa o AMS acumulado até o dia explorado: abaixo de 60, seca; de 60 a menos de 70, outono; de 70 a menos de 85, primavera; de 85 em diante, verão. Exige-se cobertura de pelo menos 75% das dimensões aplicáveis com nota registrada. Delivery só participa para desenvolvedores. Sem cobertura, o estado é “Em formação”, sem penalização visual de seca ou recompensa.
+A saúde usa o AMS acumulado até o dia explorado: abaixo de 60, seca; de 60 a menos de 70, outono; de 70 a menos de 85, primavera; de 85 em diante, verão. Exige-se cobertura de pelo menos 75% das dimensões aplicáveis com nota registrada. Delivery só participa para desenvolvedores. Sem cobertura, o estado é “Em formação”, sem penalização visual de seca.
 
-Cada dia da jornada concede, uma única vez, 2/4/6/8 moedas conforme esses níveis. Dias sem cobertura concedem zero. O botão +7 dias percorre até sete datas; reproduzir avança uma data por vez e permite pausar. Pré-visualizar datas pelo seletor e slider nunca concede moedas. Não se pode pular a ordem dos períodos na jornada.
+Cada dia da jornada concede, uma única vez, 2/4/6/8 moedas conforme esses níveis. A recompensa considera o AMS disponível mesmo com cobertura parcial. Sem nota, o avanço concede o mínimo de 2 moedas. O botão +7 dias percorre até sete datas; reproduzir avança uma data por vez e permite pausar. Pré-visualizar datas pelo seletor e slider nunca concede moedas. Não se pode pular a ordem dos períodos na jornada.
 
 A árvore é o elemento principal da home, centralizada horizontalmente, apoiada junto à base do cenário e colorida. O botão translúcido na lateral direita, abaixo do ranking abre a loja, que reúne compra e aplicação de adubo e seis decorações combináveis (flores, pedras, cogumelos, cerca, colmeia e placa). Os sprites são do pacote Tiny Town de Kenney, CC0, armazenados localmente com licença e créditos em frontend/public/img/decoracoes.
 

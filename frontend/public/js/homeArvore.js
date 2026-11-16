@@ -8,18 +8,26 @@
 	const ctx = cv.getContext("2d");
 
 	const NIVEIS = ["baixo", "medio", "alto", "excelente"];
-	const FUNDOS = { baixo: "/public/img/fundoSeca.webp", medio: "/public/img/fundoOutono.webp", alto: "/public/img/fundoPrimavera.webp", excelente: "/public/img/fundoVerao8.webp" };
+	const FUNDOS = { baixo: "/public/img/fundoSeca.webp", medio: "/public/img/fundoOutono.webp", alto: "/public/img/fundoVerao8.webp", excelente: "/public/img/fundoPrimavera.webp" };
 	const TOTAL_ESTAGIOS = 4;
 	const BW = 576, BH = 324, W = BW * 4, H = BH * 4;
-    let K, BASEX, BASEY, visualEstagio=1;
+    let K, BASEX, BASEY, visualEstagio=1, VIS_W=W, VIS_H=H;
+    // Escala única para todos os estágios (a do estágio 4, sem "pulo"), com a árvore ~42% maior (0,60 → 0,85).
+    const PROPORCAO4=0.60*2.4/1.69, AFASTAR=2.4/1.69;
+    // Artes hd (grade 320×320, o dobro da grade lógica de 160) com contorno e grama nos estágios 3 e 4.
+    const ARTE="/public/img/FramesArvore/hd_contorno/", ARTE_V="?v=1";
     function ajustarLayout() {
         const rect=cv.getBoundingClientRect();
         const scale=Math.max(rect.width/W,rect.height/H);
-        const altura=[14,34,74,115][visualEstagio-1],largura=[34,42,78,110][visualEstagio-1];
-        const proporcao=[.14,.30,.47,.60][visualEstagio-1];
-        K=Math.min(rect.height*proporcao/(altura*scale),rect.width*.78/(largura*scale));
+        K=Math.min(rect.height*PROPORCAO4/(115*scale),rect.width*.78/(110*scale));
+        const link=document.getElementById("abrirTrilha");
+        if(link){
+            link.style.width=Math.max(44,[34,42,78,110][visualEstagio-1]*K*scale)+"px";
+            link.style.height=Math.max(44,[14,34,74,115][visualEstagio-1]*K*scale)+"px";
+        }
         BASEX=W/2-80*K;
         BASEY=(rect.height*.94-(rect.height-H*scale))/scale-148*K;
+        VIS_W=rect.width/scale;VIS_H=rect.height/scale;
     }
     ajustarLayout();window.addEventListener('resize',ajustarLayout);
 	const reduzirMovimento = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -31,13 +39,13 @@
 	// ---------------------------------------------------------------- assets
 	const assets = {};
     const decorAssets={};
-    const DECORACOES=['flores','pedras','cogumelos','cerca','colmeia','placa'];
+    const DECORACOES=['flores','pedras','cogumelos','cerca','colmeia','placa','pinheiro','presentes','passaro','esquilo'];
 	function carregarImagem(src) {
 		return new Promise(function (ok, erro) { const i = new Image(); i.onload = function () { ok(i); }; i.onerror = erro; i.src = src; });
 	}
 	async function carregar() {
         await Promise.all(DECORACOES.map(async item=>{
-            const img=await carregarImagem('/public/img/decoracoes/'+item+'.png');
+            const img=await carregarImagem('/public/img/decoracoes/'+item+(['passaro','esquilo'].includes(item)?'-frames':'')+'.png');
             if(item==='flores'||item==='pedras'){
                 // Os tiles incluem grama; recorta a cor no canvas para integrar ao cenário de cada AMS.
                 const tile=document.createElement('canvas');tile.width=tile.height=16;
@@ -48,24 +56,28 @@
         }));
 		const bc = document.createElement("canvas"); bc.width = BW; bc.height = BH;
 		const bx = bc.getContext("2d", { willReadFrequently: true }); bx.imageSmoothingEnabled = false;
-		const tc = document.createElement("canvas"); tc.width = tc.height = 160;
+		const tc = document.createElement("canvas"); tc.width = tc.height = 320;
 		const tx = tc.getContext("2d", { willReadFrequently: true }); tx.imageSmoothingEnabled = false;
 		for (const n of NIVEIS) {
 			const fundo = await carregarImagem(FUNDOS[n]);
 			bx.clearRect(0, 0, BW, BH); bx.drawImage(fundo, 0, 0, BW, BH);
 			const sprites = [];
 			for (let e = 1; e <= TOTAL_ESTAGIOS; e++) {
-				const img = await carregarImagem("/public/img/FramesArvore/" + n + "/arvore_estagio_" + e + "_vetorial.svg");
-				tx.clearRect(0, 0, 160, 160); tx.drawImage(img, 0, 0, 160, 160);
-				sprites.push(tx.getImageData(0, 0, 160, 160));
+				const img = await carregarImagem(ARTE + n + "/arvore_estagio_" + e + ".png" + ARTE_V);
+				tx.clearRect(0, 0, 320, 320); tx.drawImage(img, 0, 0, 320, 320);
+				sprites.push(tx.getImageData(0, 0, 320, 320));
 			}
 			assets[n] = { fundo: fundo, fundoPx: bx.getImageData(0, 0, BW, BH), sprites: sprites };
 		}
 	}
 
+	function SPR(n) { return assets[n].sprites; }
+	// Personagem do jardim (avatarHome.js): quando está ativo, ele rega a árvore antes de cada crescimento no lugar das gotas.
+	function avatarAtivo() { return !!(window.raizAvatarHome && window.raizAvatarHome.ativo()); }
 	// ---------------------------------------------------- máscaras de transição
 	const T_SOBE = new Float32Array(25600), T_DESCE = new Float32Array(25600);
 	const M_MELHORA = new Float32Array(BW * BH), M_PIORA = new Float32Array(BW * BH);
+	const T2_SOBE = new Float32Array(102400), T2_DESCE = new Float32Array(102400);   // as mesmas máscaras na grade hd
 	(function () {
 		let s = 7; const r = function () { return (s = (s * 16807) % 2147483647) / 2147483647; };
 		const g = []; for (let j = 0; j <= 20; j++) { g[j] = []; for (let i = 0; i <= 20; i++) g[j][i] = r(); }
@@ -84,6 +96,7 @@
 			M_MELHORA[y * BW + x] = Math.min(1, Math.hypot((x - 288) / 330, (y - 298) / 300) * 0.8 + n * 0.14 + bay * 0.06);
 			M_PIORA[y * BW + x] = Math.min(1, (y / BH) * 0.75 + n * 0.18 + bay * 0.07);
 		}
+		for (let y = 0; y < 320; y++) for (let x = 0; x < 320; x++) { const k = (y >> 1) * 160 + (x >> 1); T2_SOBE[y * 320 + x] = T_SOBE[k]; T2_DESCE[y * 320 + x] = T_DESCE[k]; }
 	})();
 
 	// ---------------------------------------------------------------- estado
@@ -107,13 +120,17 @@
 	function iniciarProxima() {
 		atual = fila.shift() || null;
 		if (!atual) { clearTimeout(timerAnimacao); if (resolverAnimacao) { const resolver=resolverAnimacao; resolverAnimacao=null; resolver(); } return; }
-		atual.t = 0; atual.p = 0; atual.bp = 0; atual.pulo = 1; atual.fase = atual.tipo === "crescer" ? "agua" : "anim";
+		atual.t = 0; atual.p = 0; atual.bp = 0; atual.pulo = 1; atual.fase = atual.tipo === "crescer" ? (avatarAtivo() ? "rega" : "agua") : "anim";
 		if (atual.tipo === "nivel") {
 			atual.melhora = NIVEIS.indexOf(atual.para) > NIVEIS.indexOf(atual.de);
 			estado.nivel = atual.para; // o clima já passa a ser o do nível novo
 			if (!atual.melhora) for (let i = 0; i < 14; i++) parts.push({ x: BASEX + (50 + Math.random() * 60) * K, y: BASEY + (40 + Math.random() * 50) * K, vx: (Math.random() - 0.5) * 60, vy: 60 + Math.random() * 80, g: 120, cor: ["#6b5a4b", "#4a3d34", "#8a7a60"][Math.random() * 3 | 0], z: K, vida: 2.5, folha: true });
 		}
-		if (atual.tipo === "crescer") gotas(atual.de);
+		if (atual.fase === "agua") gotas(atual.de);
+		if (atual.fase === "rega") {
+			const passo = atual;
+			window.raizAvatarHome.regar().then(function () { if (atual === passo && passo.fase === "rega") { passo.fase = "anim"; passo.t = 0; } });
+		}
 	}
 
 	function suave(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
@@ -137,8 +154,8 @@
 	}
 
 	// --------------------------------------------------------------- desenho
-	const spr = document.createElement("canvas"); spr.width = spr.height = 160; const sx = spr.getContext("2d");
-	const sprOut = new ImageData(160, 160);
+	const spr = document.createElement("canvas"); spr.width = spr.height = 320; const sx = spr.getContext("2d");
+	const sprOut = new ImageData(320, 320);
 	const bgc = document.createElement("canvas"); bgc.width = BW; bgc.height = BH; const bgx = bgc.getContext("2d");
 	const bgOut = new ImageData(BW, BH);
 
@@ -164,11 +181,10 @@
 	function desenharArvore() {
         if(visualEstagio!==estado.estagio){visualEstagio=estado.estagio;ajustarLayout();}
 		const a = atual, e = estado.estagio - 1;
-		let pulo = 1;
-		if (a && a.fase === "pulo") { const x = Math.min(1, a.pulo / 0.45); pulo = 1 + Math.sin(x * Math.PI * 2) * (a.tipo === "crescer" || a.melhora ? 0.03 : -0.02) * (1 - x); }
-		if (!a || a.fase === "agua" || a.fase === "pulo") sx.putImageData(assets[estado.nivel].sprites[e], 0, 0);
-		else if (a.tipo === "nivel") misturar(assets[a.de].sprites[e].data, assets[a.para].sprites[e].data, a.melhora ? T_SOBE : T_DESCE, a.p, a.melhora ? [60, 80, 30] : [-40, -40, -30], sprOut.data);
-		else misturar(assets[estado.nivel].sprites[a.de - 1].data, assets[estado.nivel].sprites[a.para - 1].data, a.tipo === "crescer" ? T_SOBE : T_DESCE, a.p, a.tipo === "crescer" ? [70, 70, 40] : [-35, -35, -20], sprOut.data);
+		const pulo = 1;   // sem o "pulo" de escala (decisão do Matteus)
+		if (!a || a.fase === "agua" || a.fase === "rega" || a.fase === "pulo") sx.putImageData(SPR(estado.nivel)[e], 0, 0);
+		else if (a.tipo === "nivel") misturar(SPR(a.de)[e].data, SPR(a.para)[e].data, a.melhora ? T2_SOBE : T2_DESCE, a.p, a.melhora ? [60, 80, 30] : [-40, -40, -30], sprOut.data);
+		else misturar(SPR(estado.nivel)[a.de - 1].data, SPR(estado.nivel)[a.para - 1].data, a.tipo === "crescer" ? T2_SOBE : T2_DESCE, a.p, a.tipo === "crescer" ? [70, 70, 40] : [-35, -35, -20], sprOut.data);
 		if (a && a.fase === "anim") sx.putImageData(sprOut, 0, 0);
 		const w = 160 * K * (2 - pulo), h = 160 * K * pulo;
 		ctx.drawImage(spr, BASEX - (w - 160 * K) / 2, BASEY + 148 * K * (1 - pulo), w, h);
@@ -178,6 +194,7 @@
 
 	function desenhar() {
 		desenharFundo(); desenharArvore(); desenharDecoracoes();
+		if (window.raizAvatarHome) window.raizAvatarHome.desenhar(ctx, { W: W, chao: BASEY + 148 * K, visivelH: VIS_H, visivelW: VIS_W, K: K });
 		for (const q of parts) {
 			if (q.pisca && Math.random() < 0.25) continue;
 			if (q.chuva) { ctx.fillStyle = q.cor; ctx.fillRect(Math.round(q.x / 4) * 4, Math.round(q.y / 4) * 4, 4, 20); continue; }
@@ -199,8 +216,8 @@
 		}
 	}
 	const CLIMA = {
-		excelente: { taxa: 2.2, criar: function () { return { x: Math.random() * W, y: H * 0.62 + Math.random() * H * 0.3, vx: (Math.random() - 0.5) * 20, vy: -10 - Math.random() * 15, vida: 3 + Math.random() * 2, cor: "#ffe9a0", z: 4, pisca: true }; } },
-		alto: { taxa: 5, criar: function () { return { x: Math.random() * W * 1.2 - W * 0.1, y: -10, vx: 30 + Math.random() * 30, vy: 45 + Math.random() * 30, vida: 30, cor: Math.random() < 0.5 ? "#f6b8cf" : "#ffffff", z: 5, balanco: 1 }; } },
+		alto: { taxa: 2.2, criar: function () { return { x: Math.random() * W, y: H * 0.62 + Math.random() * H * 0.3, vx: (Math.random() - 0.5) * 20, vy: -10 - Math.random() * 15, vida: 3 + Math.random() * 2, cor: "#ffe9a0", z: 4, pisca: true }; } },
+		excelente: { taxa: 5, criar: function () { return { x: Math.random() * W * 1.2 - W * 0.1, y: -10, vx: 30 + Math.random() * 30, vy: 45 + Math.random() * 30, vida: 30, cor: Math.random() < 0.5 ? "#f6b8cf" : "#ffffff", z: 5, balanco: 1 }; } },
 		medio: { taxa: 4, criar: function () { return { x: -20 + Math.random() * W, y: -10, vx: 60 + Math.random() * 50, vy: 55 + Math.random() * 30, vida: 30, cor: ["#d6762c", "#a64626", "#e2963e"][Math.random() * 3 | 0], z: 6, balanco: 1.6, folha: true }; } },
 		baixo: { taxa: 4, criar: function () { return { x: -20, y: H * 0.45 + Math.random() * H * 0.4, vx: 80 + Math.random() * 40, vy: -8, vida: 20, cor: "rgba(174,145,94,.35)", z: 4 }; } }
 	};
@@ -233,7 +250,8 @@
         const ground=BASEY+148*K;
         const scale=Math.max(cv.clientWidth/W,cv.clientHeight/H);
         const unit=Math.min(5,cv.clientWidth/(150*scale));
-        function item(nome,x,y=0,size=16){const img=decorAssets[nome];if(img)ctx.drawImage(img,W/2+x*unit,ground+(y-size)*unit,size*unit,size*unit);}
+        // As posições foram pensadas para a árvore antiga; com a árvore ~42% maior, o x se afasta do tronco na mesma proporção.
+        function item(nome,x,y=0,size=16){const img=decorAssets[nome];if(img)ctx.drawImage(img,W/2+x*AFASTAR*unit,ground+(y-size)*unit,size*unit,size*unit);}
         for(const nome of decoracao){
             if(nome==='flores')for(const x of [-90,-65,45,70])item(nome,x,5);
             if(nome==='pedras')for(let i=0;i<4;i++)item(nome,-8,20+i*15);
@@ -241,6 +259,22 @@
             if(nome==='cerca')for(const x of [-110,-94,-78,62,78,94])item(nome,x,-6);
             if(nome==='colmeia')item(nome,-76,-5,24);
             if(nome==='placa')item(nome,54,-2,22);
+            if(nome==='pinheiro'||nome==='presentes'){
+                const size=(nome==='pinheiro'?34:18)*unit;
+                ctx.drawImage(decorAssets[nome],W/2+(nome==='pinheiro'?-.39:.28)*VIS_W,ground-size,size,size);
+            }
+            if(nome==='passaro'||nome==='esquilo'){
+                const ave=nome==='passaro';
+                const t=reduzirMovimento?0:performance.now()/1000;
+                const fase=t*(ave?.44:.32)+(ave?1.5:-1);
+                const x=W/2+Math.sin(fase)*VIS_W*.34;
+                const salto=ave?VIS_H*(.23+.055*Math.sin(t*1.8)):Math.abs(Math.sin(t*6))*unit*1.4;
+                const size=(ave?15:19)*unit;
+                const frame=reduzirMovimento?0:Math.floor(t*(ave?6:5))%2;
+                const img=decorAssets[nome];
+                ctx.save();ctx.translate(x,ground-salto);ctx.scale(Math.cos(fase)>=0?1:-1,1);
+                ctx.drawImage(img,frame*16,0,16,16,-size/2,-size,size,size);ctx.restore();
+            }
         }
     }
     function irPara(nivel, estagio, {animar=true}={}) {
@@ -252,7 +286,9 @@
         return new Promise(resolve => {
             resolverAnimacao=resolve;planejar(nivel,estagio);
             // Animação é visual: uma aba lenta nunca pode bloquear os controles indefinidamente.
-            timerAnimacao=setTimeout(()=>{estado.nivel=nivel;estado.estagio=estagio;fila=[];atual=null;desenhar();const concluir=resolverAnimacao;resolverAnimacao=null;concluir?.();},Math.min(10000,fila.length*3000+500));
+            // Cada crescimento inclui a caminhada e a rega do personagem; o próprio personagem desiste em 8 s.
+            const limite=fila.reduce((t,p)=>t+(p.tipo==='crescer'&&avatarAtivo()?9000:3000),500);
+            timerAnimacao=setTimeout(()=>{estado.nivel=nivel;estado.estagio=estagio;fila=[];atual=null;desenhar();const concluir=resolverAnimacao;resolverAnimacao=null;concluir?.();},Math.min(30000,limite));
             iniciarProxima();
         });
     }

@@ -1,5 +1,6 @@
 <link rel="stylesheet" href="/public/css/dashboard.css?v=nav3">
 <link rel="stylesheet" href="/public/css/perfil.css?v=perfil2">
+<link rel="stylesheet" href="/public/css/perfilAvatar.css?v=1">
 <div class="raizDash perfilPage">
   <%- include('../comum/sidebar', { pagina: 'perfil' }) %>
   <main class="rdMain">
@@ -18,6 +19,60 @@
         <div><dt><i class="bi bi-briefcase" aria-hidden="true"></i> Cargo</dt><dd><%= usuario.jobRole || usuario.posicao %></dd></div>
         <div><dt><i class="bi bi-shield-check" aria-hidden="true"></i> Perfil de acesso</dt><dd><%= {COLABORADOR:'Colaborador',GESTOR:'Gestor',ADMINISTRADOR:'Administrador'}[usuario.posicao] %></dd></div>
       </dl>
+    </section>
+    <section class="rdCard perfilPersonagem" id="perfilAvSecao" aria-labelledby="perfilAvTitulo">
+      <div class="rdCardHead">
+        <div><p class="rdEyebrow">SEU PERSONAGEM</p><h2 id="perfilAvTitulo">Quem cuida da sua árvore.</h2><p class="rdMuted">Ele passeia no seu jardim, rega a sua árvore a cada evolução e conversa com você no dashboard.</p></div>
+        <button id="perfilAvEditar" type="button" class="rdButton" disabled><i class="bi bi-pencil" aria-hidden="true"></i> Editar personagem</button>
+      </div>
+      <div class="perfilAvGrid">
+        <div class="perfilAvPalco">
+          <canvas id="perfilAvCanvas" width="480" height="360" role="img" aria-label="Pré-visualização do seu personagem"></canvas>
+          <div class="perfilAvBarra">
+            <div class="perfilAvSeg" role="group" aria-label="Animação da pré-visualização">
+              <button type="button" data-pose="parado" aria-pressed="true">Parado</button>
+              <button type="button" data-pose="andar" aria-pressed="false">Andando</button>
+              <button type="button" data-pose="regar" aria-pressed="false">Regando</button>
+            </div>
+            <button id="perfilAvVirar" type="button" class="rdButton rdGhost perfilAvIcone" aria-label="Virar o personagem" title="Virar"><i class="bi bi-arrow-left-right" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div>
+          <div id="perfilAvResumo" class="perfilAvResumo"></div>
+          <div id="perfilAvEditor" hidden>
+            <div class="perfilAvAbas" role="tablist" aria-label="Partes do personagem">
+              <button type="button" role="tab" id="perfilAvT-corpo" aria-controls="perfilAvP-corpo" aria-selected="true">Corpo</button>
+              <button type="button" role="tab" id="perfilAvT-cabelo" aria-controls="perfilAvP-cabelo" aria-selected="false">Cabelo</button>
+              <button type="button" role="tab" id="perfilAvT-rosto" aria-controls="perfilAvP-rosto" aria-selected="false">Rosto</button>
+              <button type="button" role="tab" id="perfilAvT-roupa" aria-controls="perfilAvP-roupa" aria-selected="false">Roupa</button>
+            </div>
+            <div role="tabpanel" id="perfilAvP-corpo" aria-labelledby="perfilAvT-corpo">
+              <div class="perfilAvGrupo" data-campo="genero" data-tipo="corpo" data-titulo="Corpo"></div>
+              <div class="perfilAvGrupo" data-campo="pele" data-tipo="cor" data-titulo="Cor da pele"></div>
+              <div class="perfilAvGrupo" data-campo="olhos" data-tipo="cor" data-titulo="Cor dos olhos"></div>
+            </div>
+            <div role="tabpanel" id="perfilAvP-cabelo" aria-labelledby="perfilAvT-cabelo" hidden>
+              <div class="perfilAvGrupo" data-campo="cabelo" data-tipo="cabeca" data-titulo="Estilo"></div>
+              <div class="perfilAvGrupo" data-campo="corCabelo" data-tipo="cor" data-titulo="Cor do cabelo"></div>
+            </div>
+            <div role="tabpanel" id="perfilAvP-rosto" aria-labelledby="perfilAvT-rosto" hidden>
+              <div class="perfilAvGrupo" data-campo="facial" data-tipo="cabeca" data-titulo="Barba e bigode"></div>
+              <div class="perfilAvGrupo" data-campo="sardas" data-tipo="cabeca" data-titulo="Sardas"></div>
+            </div>
+            <div role="tabpanel" id="perfilAvP-roupa" aria-labelledby="perfilAvT-roupa" hidden>
+              <div class="perfilAvGrupo" data-campo="camisa" data-tipo="cor" data-titulo="Cor da camisa"></div>
+              <div class="perfilAvGrupo" data-campo="calca" data-tipo="cor" data-titulo="Cor da calça"></div>
+              <p class="rdFootnote">Camisa e calça têm o mesmo modelo para todos; só a cor muda.</p>
+            </div>
+            <div class="perfilAvAcoes">
+              <button id="perfilAvAleatorio" type="button" class="rdButton rdGhost"><i class="bi bi-dice-5" aria-hidden="true"></i> Aleatório</button>
+              <div><button id="perfilAvCancelar" type="button" class="rdButton rdGhost">Cancelar</button><button id="perfilAvSalvar" type="button" class="rdButton">Salvar personagem</button></div>
+            </div>
+          </div>
+          <p id="perfilAvStatus" class="perfilAvStatus" role="status" aria-live="polite"></p>
+          <button id="perfilAvTentar" type="button" class="rdButton rdGhost" hidden>Tentar novamente</button>
+        </div>
+      </div>
     </section>
     <section aria-labelledby="perfilConsumptionTitle" class="perfilConsumption">
       <div class="rdCardHead perfilConsumptionHead">
@@ -38,3 +93,5 @@
   </main>
 </div>
 <script src="/public/js/perfil.js?v=perfil2"></script>
+<script src="/public/js/avatarSprite.js?v=1"></script>
+<script src="/public/js/perfilAvatar.js?v=1"></script>

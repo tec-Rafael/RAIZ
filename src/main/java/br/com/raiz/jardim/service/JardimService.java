@@ -55,7 +55,7 @@ public class JardimService {
         int fim=Math.min(p.dias(),progresso.dia()+request.dias()),ganho=0;
         List<Passo> passos=new ArrayList<>();String anterior=repo.ultimoNivel(u.employeeId());
         for(int d=progresso.dia()+1;d<=fim;d++){
-            var n=ams.minha(u.employeeId(),p.id(),d);int recompensa=moedas(n.nivel());
+            var n=ams.minha(u.employeeId(),p.id(),d);int recompensa=recompensaDiaria(n.ams());
             var data=p.inicio().plusDays(d-1);
             boolean nova=repo.recompensar(u.employeeId(),p.id(),d,data,recompensa,n.ams(),n.nivel());
             if(nova)ganho+=recompensa;
@@ -76,7 +76,7 @@ public class JardimService {
         int custo=preco*request.quantidade();
         if(saldo.moedas()<custo)throw conflito("Moedas insuficientes.");
         repo.comprar(sessoes.atual().employeeId(),item,request.quantidade(),custo);
-        return resposta("Compra realizada. Adubo altera apenas o crescimento, nunca o AMS.");
+        return resposta("Compra realizada. Item disponível no seu inventário.");
     }
     @Transactional
     public Atualizacao aplicar(Aplicar request){return aplicar(new Adubar(request.periodo(),request.versao(),1));}
@@ -104,7 +104,14 @@ public class JardimService {
     }
     @Transactional
     public Atualizacao equipar(Equipar request){
-        bloquear(request.versao());
+        var saldo=bloquear(request.versao());
+        String id=sessoes.atual().employeeId();
+        var ativos=Arrays.stream(saldo.decoracao().split(",")).filter(i->!i.equals("nenhuma")).toList();
+        if(!request.item().equals("nenhuma") && !ativos.contains(request.item())){
+            int estagio=estagio(repo.progresso(id,saldo.periodoAtual()).adubos());
+            if(ativos.size()>=limiteDecoracoes(estagio))
+                throw conflito("Limite de decoração deste estágio atingido.");
+        }
         if(!request.item().equals("nenhuma")&&!repo.itens(sessoes.atual().employeeId()).contains(request.item()))throw conflito("Adquira essa decoração antes de equipar.");
         repo.equipar(sessoes.atual().employeeId(),request.item());return resposta("Decoração atualizada.");
     }
@@ -142,6 +149,10 @@ public class JardimService {
         new Item("cogumelos","Cogumelos","Um toque de cor para o seu jardim.",40,adquiridos.contains("cogumelos")),
         new Item("cerca","Cerca de madeira","Uma cerca rústica para emoldurar seu jardim.",35,adquiridos.contains("cerca")),
         new Item("colmeia","Colmeia do jardim","Uma pequena casa para as abelhas.",50,adquiridos.contains("colmeia")),
+        new Item("passaro","Pisco do bosque","Voa entre os galhos, com o peito cor de pêssego.",preco("passaro"),adquiridos.contains("passaro")),
+        new Item("esquilo","Esquilo da clareira","Passeia pelo chão com a cauda enrolada.",preco("esquilo"),adquiridos.contains("esquilo")),
+        new Item("pinheiro","Pinheiro de Natal","Luzinhas de mel e uma estrela na ponta.",preco("pinheiro"),adquiridos.contains("pinheiro")),
+        new Item("presentes","Presentes de Natal","Dois pacotinhos com laços de fita.",preco("presentes"),adquiridos.contains("presentes")),
         new Item("placa","Placa do jardim","Um detalhe acolhedor ao lado da árvore.",25,adquiridos.contains("placa")));}
     private static List<Conquista> conquistas(Set<String> obtidas){return List.of(
         new Conquista("primeiro_crescimento","Criando raízes","Alcance o segundo estágio de uma árvore.",obtidas.contains("primeiro_crescimento")),
