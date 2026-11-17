@@ -6,3 +6,5 @@ target/
 .vscode/
 .DS_Store
 frontend/.env
+# Segredos locais (chave da API do Gemini etc.): nunca versionar
+.env

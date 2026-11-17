@@ -21,7 +21,9 @@ services:
       start_period: 20s
 
   api:
-    build: .
+    build:
+      context: .
+      provenance: false   # evita o travamento em "resolving provenance" do Docker Desktop
     restart: unless-stopped
     depends_on:
       postgres:
@@ -33,8 +35,112 @@ services:
       SPRING_DATASOURCE_PASSWORD: root
       AUTH_ORIGINS: ${AUTH_ORIGINS:-http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:8080,http://localhost:8080}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      ASSISTENTE_URL: http://agente-orquestrador:8000
+      AGENTES_TOKEN: ${AGENTES_TOKEN:-raiz-agentes-local}
     ports:
       - "8080:8080"
+
+  # ---------------------------------------------------------------- IA: agentes (REST/HTTP) + LLM
+  # A LLM padrão é o Claude Haiku por API (LLM_PROVEDOR=claude, chave em ANTHROPIC_API_KEY no arquivo .env).
+  # Também aceita LLM_PROVEDOR=gemini (GEMINI_API_KEY) ou LLM_PROVEDOR=ollama (local).
+  # O Ollama local só sobe com o perfil "ollama":  docker compose --profile ollama up -d
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
+    restart: unless-stopped
+    volumes:
+      - raiz_ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+
+  # Baixa os modelos uma única vez (ficam no volume raiz_ollama): qwen2.5:7b para responder e
+  # nomic-embed-text para os embeddings do RAG.
+  ollama-modelos:
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODELO:-qwen2.5:7b} && ollama pull nomic-embed-text"]
+    restart: "no"
+
+  agente-dados:
+    build:
+      context: ./agentes
+      provenance: false
+    image: raiz-agentes:local   # montada uma vez e usada por todos os agentes
+    restart: unless-stopped
+    command: ["uvicorn", "raiz_agentes.dados.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment: &agentes-env
+      BANCO_URL: postgresql+psycopg2://root:root@postgres:5432/ai_usage
+      LLM_PROVEDOR: ${LLM_PROVEDOR:-claude}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODELO: ${CLAUDE_MODELO:-claude-haiku-5-5}
+      RAG_MODO: ${RAG_MODO:-completo}
+      EMBEDDINGS_PROVEDOR: ${EMBEDDINGS_PROVEDOR:-local}
+      RAG_TRECHOS_POLITICA: ${RAG_TRECHOS_POLITICA:-4}
+      LLM_TIMEOUT: ${LLM_TIMEOUT:-30}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODELO: ${GEMINI_MODELO:-gemini-2.5-flash-lite}
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      OLLAMA_MODELO: ${OLLAMA_MODELO:-qwen2.5:7b}
+      OLLAMA_EMBEDDINGS: nomic-embed-text
+      AGENTES_TOKEN: ${AGENTES_TOKEN:-raiz-agentes-local}
+      AGENTE_DADOS_URL: http://agente-dados:8000
+      AGENTE_PERFIL_URL: http://agente-perfil:8000
+      AGENTE_CONHECIMENTO_URL: http://agente-conhecimento:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  agente-perfil:
+    image: raiz-agentes:local
+    pull_policy: never
+    restart: unless-stopped
+    command: ["uvicorn", "raiz_agentes.perfil.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment: *agentes-env
+    volumes:
+      - raiz_agentes_dados:/app/var
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Carrega as políticas das empresas (agentes/politicas) e a metodologia (agentes/docs) no banco da empresa:
+  # divide em trechos, gera os embeddings (modelo local) e grava em conhecimento_documentos/conhecimento_trechos.
+  # Roda a cada "up" e só regrava o que mudou.
+  conhecimento-carga:
+    image: raiz-agentes:local
+    pull_policy: never
+    command: ["python", "-m", "raiz_agentes.conhecimento.carga"]
+    environment: *agentes-env
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  agente-conhecimento:
+    image: raiz-agentes:local
+    pull_policy: never
+    restart: unless-stopped
+    command: ["uvicorn", "raiz_agentes.conhecimento.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment: *agentes-env
+    depends_on:
+      conhecimento-carga:
+        condition: service_completed_successfully
+
+  agente-orquestrador:
+    image: raiz-agentes:local
+    pull_policy: never
+    restart: unless-stopped
+    command: ["uvicorn", "raiz_agentes.orquestrador.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment: *agentes-env
+    ports:
+      - "8001:8000"
+    depends_on:
+      - agente-dados
+      - agente-perfil
+      - agente-conhecimento
 
   pgadmin:
     image: dpage/pgadmin4
@@ -50,3 +156,5 @@ services:
 
 volumes:
   raiz_postgres_data:
+  raiz_ollama:
+  raiz_agentes_dados:

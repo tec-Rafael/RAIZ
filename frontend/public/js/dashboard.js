@@ -101,7 +101,7 @@
   const winner=r.melhor;$('WinnerTitle').textContent=winner?'Evolução de '+winner.nome:'Nenhum destaque disponível';
   charts();renderPeople();$('TechnicalContent').replaceChildren();if($('Technical').open)loadTechnical();
   // O personagem do topo (dashAvatar.js) monta as falas com os mesmos dados.
-  document.dispatchEvent(new CustomEvent('raiz:dashboard',{detail:{dados:d,pessoa:person||null,perfil:role,usuario:state.filters.usuario}}));
+  document.dispatchEvent(new CustomEvent('raiz:dashboard',{detail:{dados:d,pessoa:person||null,perfil:role,usuario:state.filters.usuario,filtros:params()}}));
  }
  function dimensionCell(d){if(!d)return'<span class="amsNull">Não se aplica</span>';if(d.registrada==null)return'<span class="amsNull">'+(d.id==='literacy'?'0 · sem nota registrada':'Sem nota')+'</span>';return fmt(d.utilizada,2);}
  function renderDimensions(){
