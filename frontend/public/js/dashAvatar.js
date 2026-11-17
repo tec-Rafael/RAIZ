@@ -16,33 +16,99 @@
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const forte = v => '<strong>' + esc(v) + '</strong>';
 
-    // ------------------------------------------------------------ personagem (parado, de frente, piscando)
-    let quadros = [];
+    // ------------------------------------------------------------ personagem e poses
+    // A pose vem de canvas.dataset.pose (o dashModulos.js muda ao arrastar ou soltar em um card):
+    //   parado (padrão), andar (dataset.dir = 1/-1), pendurado (dataset.angulo em graus) e, em cima de um card,
+    //   sentado, deitado (de lado, apoiado no braço) ou cruzado (em pé, de braços cruzados).
+    // Enquanto o assistente pensa, a pose parada vira "pensando", com um balão de pensamento.
+    const POSE = {
+        parado: { w: 20, h: 38, x: 4, y: 0, base: 0 }, pensando: { w: 20, h: 38, x: 4, y: 0, base: 0 }, andar: { w: 20, h: 38, x: 4, y: 0, base: 0 },
+        pendurado: { w: 40, h: 40, base: 0 },        // pivô (onde o ponteiro segura) em (20, 3)
+        sentado: { w: 20, h: 35, x: 4, y: 0, base: 5 },   // as canelas (5 linhas) ficam penduradas na frente do card
+        deitado: { w: 35, h: 24, x: 0, y: 0, base: 0 },
+        cruzado: { w: 20, h: 38, x: 4, y: 0, base: 1 }
+    };
+    let cfg = null, cacheQuadros = {}, poseAtual = null, escalaAtual = 0, pensandoAgora = false;
+    const escala = () => window.matchMedia('(max-width: 700px)').matches ? 3 : 4;
+    function quadroDe(e, i) {
+        const k = e + i; if (cacheQuadros[k]) return cacheQuadros[k];
+        const q = A.quadro(cfg, e, i), c = document.createElement('canvas');
+        c.width = q.largura; c.height = q.altura; c.getContext('2d').putImageData(new ImageData(q.dados, q.largura, q.altura), 0, 0);
+        return cacheQuadros[k] = c;
+    }
     async function carregarAvatar() {
         try {
             const r = await fetch('/api/avatar/me');
             if (!r.ok) return;   // sem personagem, o balão continua sozinho
             const corpo = await r.json();
-            const cfg = A.validar(corpo.avatar);
-            quadros = [0, 1].map(i => {
-                const q = A.quadro(cfg, 'parado', i), c = document.createElement('canvas');
-                c.width = A.W; c.height = A.H; c.getContext('2d').putImageData(new ImageData(q.dados, A.W, A.H), 0, 0);
-                return c;
-            });
+            cfg = A.validar(corpo.avatar); cacheQuadros = {};
             canvas.hidden = false;
         } catch (e) { /* o dashboard funciona normalmente sem o personagem */ }
     }
+    function aplicarPose(p) {
+        const P = POSE[p], s = escala();
+        canvas.width = P.w; canvas.height = P.h;
+        canvas.style.width = P.w * s + 'px'; canvas.style.height = P.h * s + 'px';
+        canvas.style.setProperty('--rd-av-w', P.w * s + 'px'); canvas.style.setProperty('--rd-av-h', P.h * s + 'px');
+        canvas.style.setProperty('--rd-av-base', P.base * s + 'px');
+        poseAtual = p; escalaAtual = s; ctx.imageSmoothingEnabled = false;
+    }
+    function sombra(x, y, w) { ctx.fillStyle = 'rgba(20,36,20,.16)'; ctx.fillRect(x, y, w, 2); ctx.fillStyle = 'rgba(20,36,20,.26)'; ctx.fillRect(x + 2, y, w - 4, 1); }
     function desenhar(agora) {
-        if (quadros.length) {
-            const t = agora / 1000, x0 = (A.W - 20) / 2;
+        if (cfg) {
+            const t = agora / 1000, piscar = !reduzir && (t % 3.4) > 3.25 ? 1 : 0;
+            let p = canvas.dataset.pose || 'parado';
+            if (p === 'parado' && pensandoAgora) p = 'pensando';
+            if (!POSE[p]) p = 'parado';
+            if (p !== poseAtual || escala() !== escalaAtual) aplicarPose(p);
+            const P = POSE[p];
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'rgba(20,36,20,.16)'; ctx.fillRect(2, 35, 16, 2);
-            ctx.fillStyle = 'rgba(20,36,20,.26)'; ctx.fillRect(4, 35, 12, 1);
-            ctx.drawImage(quadros[!reduzir && (t % 3.4) > 3.25 ? 1 : 0], x0, 0, 20, A.H, 0, 0, 20, A.H);
+            if (p === 'pendurado') {
+                const ang = (parseFloat(canvas.dataset.angulo) || 0) * Math.PI / 180;
+                ctx.save(); ctx.translate(20, 3); ctx.rotate(ang); ctx.drawImage(quadroDe('parado', piscar), -A.W / 2, -4); ctx.restore();
+                if (Math.abs(ang) > .35 && !reduzir) { ctx.fillStyle = '#9fd8f0'; ctx.fillRect(ang > 0 ? 27 : 12, 6, 1, 2); }   // gota de suor
+            } else if (p === 'deitado') {
+                ctx.drawImage(quadroDe('deitado', (t % 5) > 4.7 && !reduzir ? 1 : 0), 0, 0);
+            } else {
+                let c;
+                if (p === 'andar') c = quadroDe('andar', reduzir ? 0 : Math.floor(t * 8) % 4);
+                else if (p === 'sentado') c = quadroDe('sentado', piscar ? 2 : (!reduzir && (t % 1.4) > .7 ? 1 : 0));
+                else c = quadroDe(p, piscar);
+                if (p !== 'sentado') sombra(2, 35, 16);
+                ctx.save();
+                if (p === 'andar' && canvas.dataset.dir === '-1') { ctx.translate(P.w, 0); ctx.scale(-1, 1); }
+                ctx.drawImage(c, P.x, P.y, P.w, P.h, 0, 0, P.w, P.h); ctx.restore();
+            }
         }
+        posicionarBaloes();
         requestAnimationFrame(desenhar);
     }
     requestAnimationFrame(desenhar);
+
+    // ------------------------------------------------------------ falas e pensamento perto do personagem
+    const falinha = document.createElement('div'), pensamento = document.createElement('div');
+    falinha.className = 'rdFalinha'; falinha.hidden = true; falinha.setAttribute('aria-live', 'polite');
+    pensamento.className = 'rdPensamento'; pensamento.hidden = true; pensamento.setAttribute('aria-hidden', 'true');
+    pensamento.innerHTML = '<span class="rdPensamentoNuvem"><i></i><i></i><i></i></span><span class="rdPensamentoBolha"></span><span class="rdPensamentoBolha rdPequena"></span>';
+    document.body.append(falinha, pensamento);
+    let falaAte = 0, falaTimer = null;
+    function posicionarBaloes() {
+        if (falinha.hidden && pensamento.hidden) return;
+        const r = canvas.getBoundingClientRect();
+        if (!r.width) { falinha.hidden = pensamento.hidden = true; return; }
+        const cabecaX = poseAtual === 'deitado' ? r.left + r.width * .22 : r.left + r.width / 2;
+        const topo = poseAtual === 'deitado' ? r.top : r.top + (poseAtual === 'pendurado' ? 0 : 4);
+        falinha.style.left = Math.max(8, Math.min(window.innerWidth - 8, cabecaX)) + 'px'; falinha.style.top = topo + 'px';
+        pensamento.style.left = (cabecaX + r.width * .18) + 'px'; pensamento.style.top = (topo + 6) + 'px';
+    }
+    window.raizDashFala = {
+        falar(texto, ms) {
+            clearTimeout(falaTimer); falinha.textContent = texto; falinha.hidden = false; posicionarBaloes();
+            falaTimer = setTimeout(() => { falinha.hidden = true; }, ms || 2800);
+        },
+        calar() { clearTimeout(falaTimer); falinha.hidden = true; }
+    };
+    function pensar(sim) { pensandoAgora = sim; pensamento.hidden = !sim; if (sim) window.raizDashFala.calar(); posicionarBaloes(); }
 
     // ------------------------------------------------------------ balão
     let lista = [], atual = 0, timer = null, modo = 'dicas', filtros = {};
@@ -87,7 +153,7 @@
         ev.preventDefault();
         const pergunta = campo.value.trim();
         if (pergunta.length < 2 || modo === 'pensando') return;
-        modo = 'pensando'; clearInterval(timer); campo.disabled = true; enviar.disabled = true;
+        modo = 'pensando'; clearInterval(timer); campo.disabled = true; enviar.disabled = true; pensar(true);
         balao.classList.remove('rdResposta'); pontos.hidden = true; proxima.hidden = true;
         fala.innerHTML = 'Analisando seus dados <span class="rdPensando" aria-hidden="true"><span></span><span></span><span></span></span>';
         const f = filtros || {};
@@ -103,6 +169,7 @@
         } catch (erro) {
             emResposta(esc(erro.message || 'Não consegui responder agora.'), []);
         } finally {
+            pensar(false);
             campo.disabled = false; enviar.disabled = false; campo.focus();
         }
     });

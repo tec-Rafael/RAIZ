@@ -687,7 +687,7 @@ ohhHoohhHo..........
 		return R;
 	}
 	function rasterizar(g, R) {
-		const d = new Uint8ClampedArray(W * H * 4);
+		const d = new Uint8ClampedArray(g.length * 4);
 		g.forEach(function (c, i) {
 			if (!c) return; const cor = c.esp ? R.esp[c.esp] : R[c.fam][c.tom];
 			d[i * 4] = cor[0]; d[i * 4 + 1] = cor[1]; d[i * 4 + 2] = cor[2]; d[i * 4 + 3] = 255;
@@ -732,15 +732,190 @@ ohhHoohhHo..........
 		g.bico = bico;
 		return g;
 	}
-	const POSES = { parado: 2, andar: 4, regar: 3 };
+	// ------------------------------------------------------------------ poses extras (dashboard e home): caindo, sentado, pensando
+	// Partem da pose de frente e trocam só braços ou pernas. Braços apagados deixam a borda vizinha como contorno.
+	// colunas do braço por linha (o resto vira contorno do tronco); a linha 27 tem a ponta da mão
+	const BRACO_OMBRO = {
+		masculino: { e: { 20: [3, 4, 5], 21: [3, 4, 5], 22: [3, 4, 5], 23: [3, 4, 5], 24: [3, 4, 5], 25: [3, 4, 5], 26: [3, 4, 5], 27: [4, 5] },
+			d: { 20: [14, 15, 16], 21: [14, 15, 16], 22: [14, 15, 16], 23: [14, 15, 16], 24: [14, 15, 16], 25: [14, 15, 16], 26: [14, 15, 16], 27: [14, 15] } },
+		feminino: { e: { 20: [4, 5], 21: [4, 5], 22: [4, 5, 6], 23: [4, 5, 6], 24: [4, 5, 6], 25: [4, 5, 6], 26: [4, 5], 27: [4, 5] },
+			d: { 20: [14, 15], 21: [14, 15], 22: [13, 14, 15], 23: [13, 14, 15], 24: [13, 14, 15], 25: [13, 14, 15], 26: [14, 15], 27: [14, 15] } }
+	};
+	function apagar(g, pontos) {
+		const vazio = {};
+		pontos.forEach(function (p) { const X = p[0] + OX, i = p[1] * W + X; if (g[i]) { g[i] = null; vazio[i] = 1; } });
+		for (const k in vazio) {
+			const i = +k, x = i % W;
+			[i - W, i + W, x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1].forEach(function (j) {
+				const c = j >= 0 ? g[j] : null; if (c && c.fam && c.tom !== 3) g[j] = { fam: c.fam, tom: 3 };
+			});
+		}
+	}
+	function semBraco(g, cfg, lado) {
+		const linhas = BRACO_OMBRO[cfg.genero][lado], pts = [];
+		for (const y in linhas) linhas[y].forEach(function (x) { pts.push([x, +y]); });
+		apagar(g, pts);
+	}
+	// braço erguido (lado esquerdo da tela); o direito é o espelho
+	const BRACO_CIMA = [
+		".oo....",
+		"olso...",
+		"olSo...",
+		"olSo...",
+		".olSo..",
+		".ovCo..",
+		".ovCo..",
+		"..ovCo.",
+		"..ovCo.",
+		"...ovCo",
+		"...ovcC",
+		"....ovc"];                     // linhas 8..19
+	// mão no queixo (lado direito da tela)
+	const BRACO_QUEIXO = [
+		".ooo...",
+		"olsso..",
+		"olsSo..",
+		".olSo..",
+		"..olSo.",
+		"..olSo.",
+		"...oSSo",
+		"...oSSo",
+		"....oo."];                     // linhas 16..24
+	// pernas sentado na borda de um card: coxas para a frente, canelas penduradas (borda entre as linhas 29 e 30)
+	const PERNAS_SENTADO = [[
+		".....opppppppPo.....",
+		".....oqppPpppPo.....",
+		".....oopPoopPoo.....",
+		"......opPoopPo......",
+		"......opPoopPo......",
+		".....onbBoonbBo.....",
+		".....oooo..oooo....."], [
+		".....opppppppPo.....",
+		".....oqppPpppPo.....",
+		".....oopPoopPoo.....",
+		"......opPoopPo......",
+		".....onbBoopPo......",
+		".....oooo.onbBo.....",
+		"..........oooo......"]];       // linhas 28..34
+	function caindo(cfg, i) {
+		const g = frente(cfg, 1), fem = cfg.genero === "feminino", x0 = fem ? -1 : -2;
+		semBraco(g, cfg, "e"); semBraco(g, cfg, "d");
+		const alto = i % 2 ? BRACO_CIMA.slice(0, 4) : null, resto = i % 2 ? BRACO_CIMA.slice(4) : BRACO_CIMA;
+		camada(g, resto, x0, i % 2 ? 12 : 8); camada(g, resto, 13 - x0, i % 2 ? 12 : 8, null, true);
+		if (alto) { camada(g, alto, x0 - 1, 8); camada(g, alto, 14 - x0, 8, null, true); }   // mãos abanando
+		return g;
+	}
+	function sentado(cfg, i) {
+		const g = frente(cfg, i === 2 ? 1 : 0);
+		for (let y = 28; y < H; y++) for (let x = 0; x < W; x++) g[y * W + x] = null;
+		camada(g, PERNAS_SENTADO[i === 1 ? 1 : 0], 0, 28);
+		return g;
+	}
+	function pensando(cfg, i) {
+		const g = frente(cfg, i % 2);
+		semBraco(g, cfg, "d");
+		camada(g, BRACO_QUEIXO, cfg.genero === "feminino" ? 9 : 10, 16);
+		return g;
+	}
+	// braços cruzados na frente do peito (em pé): antebraços na horizontal, mãos sob os cotovelos opostos
+	const CRUZADOS = {
+		masculino: { x: 3, l: [
+			"olsooooooooSSo",
+			"olslllllllsSSo",
+			"ossssssssssSSo",
+			"oSooooooooooSo",
+			"ooxoppppPPoxoo",
+			".xx........xx."] },
+		feminino: { x: 4, l: [
+			"olsooooooSSo",
+			"olslllllsSSo",
+			"ossssssssSSo",
+			"oSooooooooSo",
+			"ooopppppPooo",
+			"xx........xx"] }
+	};                                 // linhas 22..27
+	function cruzado(cfg, i) {
+		const g = frente(cfg, i % 2), c = CRUZADOS[cfg.genero];
+		camada(g, c.l, c.x, 22);
+		return g;
+	}
+	// deitado de lado, apoiado no braço de baixo (mão no rosto) e com o braço de cima na cabeça.
+	// O corpo de frente gira 90° (fica deitado de lado, de frente para quem olha); a cabeça continua em pé.
+	const DW = 35, DH = 24;
+	const BRACO_APOIO = [
+		".oo.........",
+		"olso........",
+		"olso........",
+		"olSo........",
+		"olSo........",
+		"olSo........",
+		"olSo........",
+		"olSooooooooo",
+		"olSSSSSccvvv",
+		"oSSSSScccccc",
+		"oooooooooooo"];                // origem (bx - 12, by + 7): cotovelo no chão, mão no rosto
+	const BRACO_CABECA = [
+		".oooo...",
+		"olsssoo.",
+		".oosSSlo",
+		"....olSo",
+		"....olSo",
+		"....olSo",
+		"....ovCo",
+		"....ovCo",
+		"...ovcCo",
+		"...ovcco",
+		"...ooooo"];                    // origem (bx - 2, by): sobe pelo lado da cabeça e a mão fica em cima dela
+	const PESCOCO = ["oSSo", "SSSS", "oSSo"];   // liga o queixo ao pescoço do corpo deitado
+	function pintarEm(d, w, h, linhas, x0, y0) {
+		const ch = function (x, y) { return y < 0 || y >= linhas.length || x < 0 || x >= linhas[y].length ? "." : linhas[y][x]; };
+		for (let y = 0; y < linhas.length; y++) for (let x = 0; x < linhas[y].length; x++) {
+			const c = ch(x, y), X = x0 + x, Y = y0 + y;
+			if (c === "." || X < 0 || Y < 0 || X >= w || Y >= h) continue;
+			if (c === "o") {
+				const cont = {}; let fam = null, m = 0;
+				for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const f = familia(ch(x + dx, y + dy)); if (f) cont[f] = (cont[f] || 0) + (dx && dy ? 1 : 2); }
+				for (const f in cont) if (cont[f] > m) { m = cont[f]; fam = f; }
+				d[Y * w + X] = { fam: fam || "pele", tom: 3 };
+			} else if (LETRA[c]) d[Y * w + X] = { fam: LETRA[c][0], tom: LETRA[c][1] };
+		}
+	}
+	function deitadoDeLado(cfg, i) {
+		const g = frente(cfg, i % 2);
+		semBraco(g, cfg, "e"); semBraco(g, cfg, "d");
+		const d = []; for (let k = 0; k < DW * DH; k++) d.push(null);
+		const by = DH - 19, bx = 14, hx = bx - 17, hy = by - 4;
+		// corpo (linhas 17..37 da grade) girado 90° no sentido anti-horário: o pescoço fica à esquerda, os pés à direita
+		for (let y = 17; y < H; y++) for (let x = 0; x < W; x++) {
+			const c = g[y * W + x]; if (!c) continue;
+			const X = bx + (y - 17), Y = by + (W - 1 - x); if (X >= 0 && X < DW && Y >= 0 && Y < DH) d[Y * DW + X] = c;
+		}
+		pintarEm(d, DW, DH, BRACO_APOIO, bx - 12, by + 7);
+		pintarEm(d, DW, DH, PESCOCO, bx - 3, by + 11);
+		// cabeça em pé (linhas 0..16), à esquerda do corpo
+		for (let y = 0; y <= 16; y++) for (let x = 0; x < W; x++) {
+			const c = g[y * W + x]; if (!c) continue;
+			const X = hx + x, Y = hy + y; if (X >= 0 && X < DW && Y >= 0 && Y < DH) d[Y * DW + X] = c;
+		}
+		pintarEm(d, DW, DH, BRACO_APOIO.slice(0, 4), bx - 12, by + 7);   // a mão fica na frente do rosto
+		pintarEm(d, DW, DH, BRACO_CABECA, bx - 2, by);
+		d.largura = DW; d.altura = DH;
+		return d;
+	}
+	const POSES = { parado: 2, andar: 4, regar: 3, caindo: 2, sentado: 3, pensando: 2, cruzado: 2, deitado: 2 };
 
 	function quadro(config, estado, i) {
 		const cfg = validar(config), R = cores(cfg);
 		let g;
 		if (estado === "andar") g = perfil(cfg, i);
 		else if (estado === "regar") g = perfil(cfg, 0, REGAR[((i % 3) + 3) % 3]);
+		else if (estado === "caindo") g = caindo(cfg, i);
+		else if (estado === "sentado") g = sentado(cfg, ((i % 3) + 3) % 3);
+		else if (estado === "pensando") g = pensando(cfg, i);
+		else if (estado === "cruzado") g = cruzado(cfg, i);
+		else if (estado === "deitado") g = deitadoDeLado(cfg, i);
 		else g = frente(cfg, i % 2);
-		return { largura: W, altura: H, dados: rasterizar(g, R), bico: g.bico || null };
+		return { largura: g.largura || W, altura: g.altura || H, dados: rasterizar(g, R), bico: g.bico || null };
 	}
 
 	function validar(c) {

@@ -97,52 +97,154 @@
     });
 
     // ------------------------------------------------------------ personagem
+    // Segurado: fica pendurado pelo ponto onde o ponteiro pega (topo da cabeça) e balança como um pêndulo.
+    // Solto em um card: sorteia uma pose (sentado na borda, deitado de lado ou em pé de braços cruzados). Fora de um card: reclama e volta andando.
     const av = document.getElementById('rdAvatar'), casa = document.getElementById('rdHello');
-    let solto = null;
-    function voltar(animar) {
+    const RECLAMA = ['Ai! Isso doeu!', 'Ei, mais cuidado!', 'Ui, minhas costas…', 'Precisava disso?', 'Que tombo!', 'Me põe no chão devagar!'];
+    const PASSEIO = ['Voltando para o meu cantinho.', 'Lá-lá-lá…', 'Um passo de cada vez!', 'Que dashboard bonito!', 'Bora evoluir hoje?'];
+    const sorteio = l => l[Math.floor(Math.random() * l.length)];
+    const falar = (texto, ms) => window.raizDashFala?.falar(texto, ms);
+    const escala = () => window.matchMedia('(max-width: 700px)').matches ? 3 : 4;
+    let solto = null, caminhada = null;
+    const POSES_CARD = ['sentado', 'deitado', 'cruzado'];
+    // Ao ser colocado em um card, ele comenta o que aquele card mostra, com os dados que o dashboard acabou de carregar
+    // (evento "raiz:dashboard": os próprios dados do colaborador, a equipe do gestor ou o recorte do administrador).
+    let painel = null;
+    document.addEventListener('raiz:dashboard', e => { painel = e.detail || null; });
+    const num = n => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    const nivelDe = n => n >= 85 ? 'Excelente' : n >= 70 ? 'Alto' : n >= 60 ? 'Médio' : 'Baixo';
+    const primeiro = nome => String(nome || '').trim().split(/\s+/)[0];
+    function fraseDoCard(id) {
+        const d = painel?.dados; if (!d || !d.resumo || !d.periodo) return null;
+        const r = d.resumo, p = d.periodo.id, perfil = painel.perfil, pessoa = painel.pessoa, usuario = painel.usuario;
+        const propria = perfil === 'colaborador' || (pessoa && usuario && pessoa.id === usuario.id);
+        const quem = propria ? 'Seu AMS' : pessoa ? 'O AMS de ' + primeiro(pessoa.nome) : perfil === 'gestor' ? 'O AMS médio da sua equipe' : 'O AMS médio do recorte';
+        const notas = (d.evolucao || []).map(x => x?.resumo?.nota ?? null);
+        try {
+            switch (id) {
+                case 'kpis':
+                    return r.nota == null ? 'Ainda não há AMS em P' + p + '. Assim que houver dados, eu conto!' : quem + ' em P' + p + ' é ' + num(r.nota) + ': nível ' + nivelDe(r.nota) + '.';
+                case 'dimensoes': {
+                    const indiv = propria || pessoa, chave = indiv ? 'utilizada' : 'nota';
+                    const ds = ((indiv ? d.pessoal?.dimensoes : r.dimensoes) || []).filter(x => x[chave] != null && (chave !== 'utilizada' || x.registrada != null));
+                    if (!ds.length) return 'Ainda não há notas por dimensão neste período.';
+                    const ord = ds.slice().sort((a, b) => b[chave] - a[chave]), alta = ord[0], baixa = ord[ord.length - 1];
+                    return ord.length === 1 ? alta.nome + ' está em ' + num(alta[chave]) + '.'
+                        : 'O ponto forte é ' + alta.nome + ' (' + num(alta[chave]) + '). Dá para crescer em ' + baixa.nome + ' (' + num(baixa[chave]) + ').';
+                }
+                case 'trajetoria': {
+                    const atual = notas[p - 1], ant = notas[p - 2], ini = notas.find(x => x != null);
+                    if (atual == null) return 'Sem nota em P' + p + ', então a linha tem uma lacuna aqui.';
+                    if (ant == null) return quem + ' começou a série com ' + num(atual) + '.';
+                    const dif = atual - ant, tot = ini != null ? atual - ini : null;
+                    return (Math.abs(dif) < .005 ? 'De P' + (p - 1) + ' para P' + p + ' a nota ficou igual.' : 'De P' + (p - 1) + ' para P' + p + ' foram ' + (dif > 0 ? '+' : '') + num(dif) + ' pontos.')
+                        + (tot != null && p > 2 ? ' Desde o início: ' + (tot > 0 ? '+' : '') + num(tot) + '.' : '');
+                }
+                case 'distribuicao': {
+                    if (propria || pessoa) return r.nota == null ? 'Sem nota neste período, então fico na faixa "indisponível".' : 'Essa nota cai na faixa ' + nivelDe(r.nota) + '.';
+                    const fx = (d.distribuicao || []).filter(x => x.quantidade > 0).sort((a, b) => b.quantidade - a.quantidade)[0];
+                    return fx ? 'A faixa com mais gente é "' + fx.nome + '": ' + fx.quantidade + (fx.quantidade === 1 ? ' pessoa.' : ' pessoas.') : null;
+                }
+                case 'lideres':
+                    return r.melhor?.nome ? 'Destaque de P' + p + ': ' + primeiro(r.melhor.nome) + ', com ' + num(r.melhor.nota) + '.' : 'Ninguém se destacou em P' + p + ' ainda.';
+                case 'destaque': {
+                    const ev = (d.evolucaoDestaque || []).map(x => x?.resumo?.nota ?? null), ini = ev.find(x => x != null), fim = ev[p - 1];
+                    if (!r.melhor?.nome || fim == null) return null;
+                    return ini != null && ini !== fim ? primeiro(r.melhor.nome) + ' saiu de ' + num(ini) + ' para ' + num(fim) + '.' : primeiro(r.melhor.nome) + ' está com ' + num(fim) + ' em P' + p + '.';
+                }
+                case 'comparacao': {
+                    const gs = (d.areas || d.empresas || []).map(g => ({ nome: g.nome, nota: g.evolucao?.[p - 1]?.nota ?? g.evolucao?.[p - 1]?.resumo?.nota ?? null })).filter(g => g.nota != null).sort((a, b) => b.nota - a.nota);
+                    return gs.length ? gs[0].nome + ' lidera com ' + num(gs[0].nota) + (gs.length > 1 ? '; ' + gs[gs.length - 1].nome + ' tem a menor nota (' + num(gs[gs.length - 1].nota) + ').' : '.') : null;
+                }
+                case 'pessoas':
+                    return propria ? 'Aqui ficam suas notas, uma por uma.' : r.validos + ' de ' + r.pessoas + ' pessoas têm AMS em P' + p + '.';
+                case 'uso':
+                    return 'Abra aqui para ver o uso de IA e as entregas do período.';
+                case 'metodologia':
+                    return 'Sabia? Cada curso concluído na árvore soma +5 pontos à AI Literacy.';
+            }
+        } catch (erro) { return null; }
+        return null;
+    }
+    let ultimaPose = null;
+    function voltar(animar, motivo) {
         if (!av || !casa) return;
+        caminhada?.cancel(); caminhada = null;
         const r0 = av.getBoundingClientRect(), estava = av.parentElement !== casa;
         av.classList.remove('rdAvatarSolto', 'rdAvatarArrastando'); av.style.left = av.style.top = ''; av.style.removeProperty('--rd-av-frac');
+        delete av.dataset.angulo; delete av.dataset.pose;
         casa.appendChild(av);
+        if (motivo === 'jogado') falar(sorteio(RECLAMA), 2600);
         if (animar && estava && !reduzir && r0.width) {
-            const r1 = av.getBoundingClientRect();
-            av.animate([{ transform: 'translate(' + (r0.left - r1.left) + 'px,' + (r0.top - r1.top) + 'px)' }, { transform: 'none' }], { duration: 500, easing: 'ease-in-out' });
+            const r1 = av.getBoundingClientRect(), dx = r0.left + r0.width / 2 - (r1.left + r1.width / 2), dy = r0.bottom - r1.bottom;
+            const ms = Math.max(500, Math.min(1600, Math.hypot(dx, dy) / .35));
+            av.dataset.pose = 'andar'; av.dataset.dir = dx > 0 ? '-1' : '1';
+            if (motivo === 'restaurar') falar(sorteio(PASSEIO), 2400);
+            caminhada = av.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }], { duration: ms, easing: 'linear' });
+            caminhada.onfinish = () => { caminhada = null; if (av.dataset.pose === 'andar') delete av.dataset.pose; };
         }
         if (estado.avatar) { delete estado.avatar; salvar(); }
     }
-    function colocar(m, frac) {
+    function colocar(m, frac, pose) {
+        caminhada?.cancel(); caminhada = null;
         av.classList.remove('rdAvatarArrastando'); av.classList.add('rdAvatarSolto'); av.style.top = av.style.left = '';
+        if (!POSES_CARD.includes(pose)) { pose = sorteio(POSES_CARD.filter(p => p !== ultimaPose)); }   // sorteada, sem repetir a anterior
+        ultimaPose = pose;
+        delete av.dataset.angulo; av.dataset.pose = pose;
         av.style.setProperty('--rd-av-frac', frac.toFixed(3));   // o CSS calcula o left e mantém o personagem dentro do card
         m.appendChild(av);
-        estado.avatar = { modulo: m.dataset.modulo, frac: Math.round(frac * 1000) / 1000 }; salvar();
+        estado.avatar = { modulo: m.dataset.modulo, frac: Math.round(frac * 1000) / 1000, pose }; salvar();
+    }
+    function comentar(m) { const f = fraseDoCard(m.dataset.modulo); if (f) falar(f, 5000); }
+    // pêndulo: o personagem balança conforme a aceleração do ponteiro
+    function balancar(agora) {
+        const s = solto; if (!s || !s.moveu) return;
+        const dt = Math.min(.033, (agora - (s.t || agora)) / 1000) || .016; s.t = agora;
+        const vx = (s.x - s.xAnt) / dt; const ax = (vx - s.vx) / dt; s.xAnt = s.x; s.vx = vx;
+        const L = 18 * escala(), g = 2400;
+        s.w += (-(g / L) * Math.sin(s.ang) - 4 * s.w - (Math.max(-6000, Math.min(6000, ax)) / L) * Math.cos(s.ang)) * dt;
+        s.ang = Math.max(-1.1, Math.min(1.1, s.ang + s.w * dt));
+        av.dataset.angulo = (s.ang * 180 / Math.PI).toFixed(1);
+        s.raf = requestAnimationFrame(balancar);
+    }
+    function seguir() {
+        const s = escala();
+        av.style.left = (solto.x - 20 * s) + 'px'; av.style.top = (solto.y - 3 * s) + 'px';   // o pivô (20, 3) fica sob o ponteiro
     }
     if (av && casa) {
         av.title = 'Arraste o personagem para cima de um card';
         av.addEventListener('pointerdown', e => {
             if (e.button !== 0) return;
             e.preventDefault();
-            const r = av.getBoundingClientRect();
-            solto = { gx: e.clientX - r.left, gy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, w: r.width, h: r.height, origem: av.parentElement, left: av.style.left, moveu: false };
+            solto = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, xAnt: e.clientX, vx: 0, ang: 0, w: 0, moveu: false };
             av.setPointerCapture(e.pointerId);
         });
         av.addEventListener('pointermove', e => {
             if (!solto) return;
+            solto.x = e.clientX; solto.y = e.clientY;
             if (!solto.moveu && Math.hypot(e.clientX - solto.x0, e.clientY - solto.y0) < 6) return;   // um clique não tira o personagem do lugar
-            if (!solto.moveu) { solto.moveu = true; av.classList.add('rdAvatarArrastando'); document.body.classList.add('rdOrganizando'); }
-            av.style.left = (e.clientX - solto.gx) + 'px'; av.style.top = (e.clientY - solto.gy) + 'px';
+            if (!solto.moveu) {
+                solto.moveu = true; caminhada?.cancel(); caminhada = null;
+                av.dataset.pose = 'pendurado'; av.classList.remove('rdAvatarSolto'); av.classList.add('rdAvatarArrastando');
+                solto.origem = av.parentElement; document.body.appendChild(av);   // fora dos cards, para ficar por cima de tudo
+                try { av.setPointerCapture(e.pointerId); } catch (erro) { /* mover o elemento solta a captura; recaptura */ }
+                document.body.classList.add('rdOrganizando'); window.raizDashFala?.calar();
+                solto.raf = requestAnimationFrame(balancar);
+            }
+            seguir();
         });
         const largar = e => {
             if (!solto) return;
-            const s = solto; solto = null; document.body.classList.remove('rdOrganizando');
+            const s = solto; solto = null; cancelAnimationFrame(s.raf); document.body.classList.remove('rdOrganizando');
             if (!s.moveu) return;
-            const pes = { x: e.clientX - s.gx + s.w / 2, y: e.clientY - s.gy + s.h - 6 };
-            const alvo = document.elementsFromPoint(pes.x, pes.y).filter(el => el !== av).map(el => el.closest('#rdContent [data-modulo]')).find(Boolean);
-            if (alvo && e.type === 'pointerup') { const r = alvo.getBoundingClientRect(); colocar(alvo, Math.min(1, Math.max(0, (pes.x - r.left) / r.width))); }
-            else voltar(true);
+            const sc = escala(), ponto = { x: e.clientX, y: e.clientY + 22 * sc };   // o corpo fica pendurado abaixo do ponteiro
+            const alvo = document.elementsFromPoint(ponto.x, ponto.y).filter(el => el !== av).map(el => el.closest('#rdContent [data-modulo]')).find(Boolean);
+            if (alvo && e.type === 'pointerup') { const r = alvo.getBoundingClientRect(); colocar(alvo, Math.min(1, Math.max(0, (ponto.x - r.left) / r.width))); comentar(alvo); }
+            else voltar(true, 'jogado');
         };
         av.addEventListener('pointerup', largar);
         av.addEventListener('pointercancel', largar);
-        // Ao perguntar algo, o personagem volta para perto da caixa de mensagem.
+        // Ao perguntar algo, o personagem volta para perto da caixa de mensagem (e pensa lá).
         document.getElementById('rdPergunta')?.addEventListener('submit', () => voltar(true), true);
         // Se o card onde ele estava some (outro filtro ou papel), ele volta.
         document.addEventListener('raiz:dashboard', () => requestAnimationFrame(() => {
@@ -151,13 +253,13 @@
     }
 
     restaurar?.addEventListener('click', () => {
-        delete estado.ordem; aplicar(padrao); voltar(true); estado = {}; gravar(); restaurar.hidden = true;
+        delete estado.ordem; aplicar(padrao); voltar(true, 'restaurar'); estado = {}; gravar(); restaurar.hidden = true;
     });
 
     aplicar(estado.ordem);
     if (estado.avatar && av && porId(estado.avatar.modulo)) {
         const m = porId(estado.avatar.modulo), a = estado.avatar;
-        requestAnimationFrame(() => colocar(m, a.frac));
+        requestAnimationFrame(() => colocar(m, a.frac, a.pose));
     }
     if (restaurar) restaurar.hidden = !estado.ordem && !estado.avatar;
 })();
