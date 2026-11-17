@@ -6,6 +6,10 @@ relatório), então a recomendação não promete "este curso melhora seu uso". 
    diversidade de categorias, até 4 (20%);
 2. os pontos de atenção do perfil (ex.: uso fora da política → Governança);
 3. filtro colaborativo simples: cursos com melhor conclusão e nota entre pessoas do mesmo perfil e cargo.
+
+Para a comparação com os colegas de área (pergunta do colaborador), cursos_dos_colegas() conta os cursos que os
+colegas com AMS maior concluíram e a pessoa ainda não fez. Só devolve contagens (nunca quem fez) e só cursos
+concluídos por pelo menos MINIMO_COLEGAS pessoas do grupo, para ninguém ser identificado.
 """
 import pandas as pd
 
@@ -66,3 +70,29 @@ def recomendar(employee_id: str, perfil: str, codigos_atencao: list[str], cargo:
             motivos.append(f"{c.conclusao:.0%} das pessoas parecidas com você concluíram")
         recs.append({"curso": c.course_name, "categoria": c.course_category, "motivo": "Este curso " + ", ".join(motivos) + "." if motivos else "Curso disponível no catálogo."})
     return recs[:limite]
+
+
+MINIMO_COLEGAS = 2
+
+
+def cursos_dos_colegas(employee_id: str, referencia: list[str], trein: pd.DataFrame, limite: int = 4) -> dict:
+    """Cursos concluídos pelos colegas de referência (AMS maior) que a pessoa ainda não concluiu, com quantos colegas
+    concluíram e a nota média; e as categorias em que esse grupo concluiu mais cursos por pessoa que ela."""
+    ref = set(referencia) - {employee_id}
+    if len(ref) < 3:
+        return {"colegas": len(ref), "cursos": [], "categorias": []}
+    meus = trein[trein.employee_id == employee_id]
+    concluidos_meus = set(meus.loc[meus.completion_status == "Concluido", "course_name"])
+    feitos = trein[trein.employee_id.isin(ref) & (trein.completion_status == "Concluido")]
+    est = (feitos.groupby(["course_name", "course_category"], as_index=False)
+                 .agg(pessoas=("employee_id", "nunique"), nota=("score", "mean")))
+    est = est[(est.pessoas >= MINIMO_COLEGAS) & ~est.course_name.isin(concluidos_meus)]
+    est = est.sort_values(["pessoas", "nota"], ascending=[False, False]).head(limite)
+    cursos = [{"curso": r.course_name, "categoria": r.course_category, "colegas": int(r.pessoas),
+               "nota_media": None if pd.isna(r.nota) else round(float(r.nota), 1)} for r in est.itertuples()]
+    # categorias: cursos concluídos por pessoa no grupo x da própria pessoa
+    por_pessoa = feitos.groupby("course_category").size() / len(ref)
+    minhas = meus[meus.completion_status == "Concluido"].groupby("course_category").size()
+    cats = [{"categoria": c, "media_colegas": round(float(v), 1), "voce": int(minhas.get(c, 0))}
+            for c, v in por_pessoa.sort_values(ascending=False).items() if v - minhas.get(c, 0) >= 0.5][:3]
+    return {"colegas": len(ref), "cursos": cursos, "categorias": cats}

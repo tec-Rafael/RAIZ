@@ -74,3 +74,56 @@ def test_metodologia_completa_e_politicas_no_prompt():
 def test_agentes_exigem_token():
     assert TestClient(orquestrador).post("/perguntar", json=pedido().model_dump(by_alias=True)).status_code == 401
     assert TestClient(conhecimento.app).post("/todos", json={}).status_code == 401
+
+
+# ------------------------------------------------------------ privacidade por modo e comparação anônima
+def test_colaborador_recebe_so_comparacao_anonima():
+    ped = pedido(modo="colaborador", equipe={"colegas": 6, "ams": {"nota": 70.0, "validos": 6, "dimensoes": [{"nome": "Governança", "nota": 55.0}]},
+                                              "referencia": ["C01-E0002", "C01-E0003", "C01-E0004"], "colegasIds": ["C01-E0002", "C01-E0003", "C01-E0004", "C01-E0005"]})
+    ref_dados = {"atual": {"pessoas": 3, "pessoas_com_uso": 3, "dias_ativos_media": 40, "taxa_falha": 0.02, "parcela_ferramentas_nao_aprovadas": 0.0,
+                           "custo_por_requisicao_usd": 0.012, "cursos_concluidos": 6}}
+    cursos = {"colegas": 3, "cursos": [{"curso": "Governança de IA na prática", "categoria": "Governanca", "colegas": 3, "nota_media": 88.0}], "categorias": []}
+    sistema = prompt.montar(ped, None, None, {}, referencia_dados=ref_dados, referencia_cursos=cursos)[0]["content"]
+    assert "COMPARAÇÃO ANÔNIMA COM OS COLEGAS DE ÁREA (6 colegas" in sistema
+    assert "8,6 pontos abaixo da média" in sistema and "Governança 55,0 (você: -35,0)" in sistema
+    assert "Governança de IA na prática (Governanca), concluído por 3 colegas" in sistema
+    assert "Boas práticas dos 3 colegas com AMS maior" in sistema and "2,0 cursos concluídos por pessoa" in sistema
+    assert "C01-E000" not in sistema                     # nenhum id de colega chega à LLM
+    assert "Nunca cite nome, nota, posição" in sistema
+
+
+def test_area_pequena_nao_tem_comparacao():
+    sistema = prompt.montar(pedido(modo="colaborador", equipe={"colegas": 2, "ams": {"nota": 80.0}}), None, None, {})[0]["content"]
+    assert "indisponível (a área tem poucas pessoas" in sistema and "80,00" not in sistema
+
+
+def test_gestor_na_equipe_tem_os_proprios_dados_e_e_orientado_a_abrir_o_dashboard():
+    ped = pedido(modo="gestor_equipe", usuario={"nome": "Bruno", "perfil": "gestor"},
+                 escopo={"tipo": "grupo", "descricao": "sua equipe (Engenharia), 8 pessoas", "employeeIds": ["G1", "C2", "C3"], "empresas": ["C01"]},
+                 pessoal={"employeeIds": ["G1"], "ams": {"nota": 82.0, "dimensoes": []}})
+    sistema = prompt.montar(ped, None, None, {})[0]["content"]
+    assert "SEUS DADOS (Bruno, além da equipe)" in sistema and "82,00 de 100" in sistema
+    assert "filtro Colaborador para abrir o dashboard dela" in sistema
+    assert "COMPARAÇÃO ANÔNIMA" not in sistema
+
+
+def test_gestor_no_dashboard_do_colaborador_fala_da_pessoa():
+    ped = pedido(modo="gestor_colaborador", usuario={"nome": "Bruno", "perfil": "gestor"},
+                 escopo={"tipo": "pessoal", "descricao": "dados de Carla Souza", "nome": "Carla Souza", "proprio": False, "employeeIds": ["C3"]})
+    sistema = prompt.montar(ped, None, None, {})[0]["content"]
+    assert "responde sobre os dados de Carla Souza" in sistema and "chamando a pessoa pelo nome" in sistema
+
+
+def test_cursos_dos_colegas_so_conta_e_exige_minimo():
+    import pandas as pd
+    from raiz_agentes.ml import treinamentos
+    t = pd.DataFrame([
+        {"employee_id": e, "course_name": c, "course_category": cat, "completion_status": s, "score": 80}
+        for e, c, cat, s in [("EU", "A", "IA", "Concluido"),
+                             ("R1", "A", "IA", "Concluido"), ("R2", "A", "IA", "Concluido"),
+                             ("R1", "B", "Gov", "Concluido"), ("R2", "B", "Gov", "Concluido"), ("R3", "B", "Gov", "Concluido"),
+                             ("R3", "C", "Seg", "Concluido")]])
+    r = treinamentos.cursos_dos_colegas("EU", ["R1", "R2", "R3"], t)
+    assert [c["curso"] for c in r["cursos"]] == ["B"]            # A já foi concluído; C só por 1 colega
+    assert r["cursos"][0]["colegas"] == 3 and "R1" not in str(r)
+    assert treinamentos.cursos_dos_colegas("EU", ["R1", "R2"], t)["cursos"] == []   # grupo pequeno demais

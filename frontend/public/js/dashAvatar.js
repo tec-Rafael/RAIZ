@@ -139,7 +139,7 @@
     campo.placeholder = placeholders[caixa.dataset.perfil] || placeholders.COLABORADOR;
     // Texto do modelo → HTML seguro: escapa tudo e só reconhece **negrito**.
     const formatar = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    const nomesFontes = f => f.startsWith('metodologia') ? 'metodologia do AMS' : f.startsWith('politica:') ? 'política de IA da ' + f.slice(9) : f === 'dados' ? 'dados de uso' : f === 'perfil' ? 'perfil de uso (machine learning)' : f;
+    const nomesFontes = f => f.startsWith('metodologia') ? 'metodologia do AMS' : f.startsWith('politica:') ? 'política de IA da ' + f.slice(9) : f === 'dados' ? 'dados de uso' : f === 'perfil' ? 'perfil de uso (machine learning)' : f === 'colegas' ? 'comparação anônima com a área' : f;
     function emResposta(conteudo, fontes) {
         modo = 'resposta'; balao.classList.add('rdResposta');
         pontos.hidden = true; proxima.hidden = false; proxima.textContent = '‹ Voltar às dicas';

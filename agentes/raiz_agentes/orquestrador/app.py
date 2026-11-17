@@ -37,9 +37,30 @@ class Escopo(BaseModel):
     tipo: Literal["pessoal", "grupo"]
     descricao: str = Field(max_length=300)
     proprio: bool = False          # pessoal e sobre o próprio usuário
+    nome: str | None = Field(default=None, max_length=200)   # pessoal: nome da pessoa do dashboard
     empresas: list[str] = Field(default_factory=list, max_length=100)   # empresas do recorte (filtra as políticas)
     employee_ids: list[str] = Field(alias="employeeIds", min_length=1, max_length=5000)
     model_config = {"populate_by_name": True}
+
+
+class Pessoal(BaseModel):
+    """Dados do próprio gestor quando ele pergunta no dashboard da equipe."""
+    employee_ids: list[str] = Field(alias="employeeIds", min_length=1, max_length=1)
+    ams: dict | None = None
+    model_config = {"populate_by_name": True}
+
+
+class Equipe(BaseModel):
+    """Comparação anônima com os colegas de área (só para quem pergunta sobre os próprios dados).
+    Os ids servem apenas para os agentes calcularem médias e contagens; nunca entram no texto do prompt."""
+    colegas: int = Field(ge=0)
+    ams: dict | None = None
+    referencia: list[str] = Field(default_factory=list, max_length=5000)
+    colegas_ids: list[str] = Field(alias="colegasIds", default_factory=list, max_length=5000)
+    model_config = {"populate_by_name": True}
+
+
+MODOS = Literal["colaborador", "gestor_proprio", "gestor_colaborador", "gestor_equipe", "administrador", "administrador_pessoa"]
 
 
 class Pedido(BaseModel):
@@ -48,6 +69,16 @@ class Pedido(BaseModel):
     periodo: int = Field(ge=1, le=5)
     escopo: Escopo
     ams: dict | None = None        # resumo do AMS calculado pelo Java (nota, notaAnterior, dimensões...)
+    modo: MODOS | None = None      # o que a IA pode responder (definido pelo Java a partir do perfil e do filtro)
+    pessoal: Pessoal | None = None
+    equipe: Equipe | None = None
+
+    def modo_efetivo(self) -> str:
+        if self.modo:
+            return self.modo
+        if self.escopo.tipo == "pessoal":
+            return "colaborador" if self.escopo.proprio else "administrador_pessoa"
+        return "administrador"
 
 
 async def _chamar(cliente: httpx.AsyncClient, url: str, corpo: dict, nome: str):
@@ -58,6 +89,28 @@ async def _chamar(cliente: httpx.AsyncClient, url: str, corpo: dict, nome: str):
     except httpx.HTTPError as erro:          # um agente fora do ar não derruba a resposta: o contexto fica menor
         log.warning("Agente %s indisponível: %s", nome, erro)
         return None
+
+
+async def _extras(pedido: Pedido) -> dict:
+    """Dados que dependem do modo: os do próprio gestor (dashboard da equipe) e a comparação anônima com os colegas."""
+    tarefas, nomes = [], []
+    async with httpx.AsyncClient(timeout=30) as cliente:
+        if pedido.pessoal:
+            r = {"employeeIds": pedido.pessoal.employee_ids, "periodo": pedido.periodo}
+            tarefas += [_chamar(cliente, config.AGENTE_DADOS_URL + "/contexto", r, "dados"),
+                        _chamar(cliente, config.AGENTE_PERFIL_URL + "/perfil", r, "perfil")]
+            nomes += ["pessoal_dados", "pessoal_perfil"]
+        eq = pedido.equipe
+        if eq and len(eq.colegas_ids) >= 3:
+            tarefas.append(_chamar(cliente, config.AGENTE_DADOS_URL + "/contexto", {"employeeIds": eq.colegas_ids, "periodo": pedido.periodo}, "dados"))
+            nomes.append("colegas_dados")
+        if eq and len(eq.referencia) >= 3:
+            tarefas += [_chamar(cliente, config.AGENTE_DADOS_URL + "/contexto", {"employeeIds": eq.referencia, "periodo": pedido.periodo}, "dados"),
+                        _chamar(cliente, config.AGENTE_PERFIL_URL + "/cursos_colegas",
+                                {"employeeId": pedido.escopo.employee_ids[0], "referencia": eq.referencia, "periodo": pedido.periodo}, "perfil")]
+            nomes += ["referencia_dados", "referencia_cursos"]
+        resultados = await asyncio.gather(*tarefas) if tarefas else []
+    return dict(zip(nomes, resultados))
 
 
 @app.get("/saude")
@@ -87,7 +140,8 @@ async def perguntar(pedido: Pedido):
                                                  "quantidade": config.RAG_TRECHOS_POLITICA, "tipo": "politica"}, "conhecimento")
             if pedido.escopo.empresas else asyncio.sleep(0, result=None))
     conhecimento = {"metodologia": metodologia, "politicas": politicas}
-    mensagens = prompt.montar(pedido, dados, perfil, conhecimento)
+    extras = await _extras(pedido)
+    mensagens = prompt.montar(pedido, dados, perfil, conhecimento, **extras)
     try:
         resposta = await llm.conversar(mensagens)
     except llm.LimiteExcedido as erro:
@@ -97,6 +151,8 @@ async def perguntar(pedido: Pedido):
         log.error("%s", erro)
         raise HTTPException(503, "O assistente está indisponível no momento. Tente novamente em instantes.")
     fontes = [n for n, v in (("dados", dados), ("perfil", perfil)) if v]
+    if extras.get("colegas_dados") or extras.get("referencia_cursos"):
+        fontes.append("colegas")
     if (metodologia or {}).get("trechos"):
         fontes.append("metodologia")
     fontes += sorted({f"politica:{t['empresa']}" for t in (politicas or {}).get("trechos", [])})

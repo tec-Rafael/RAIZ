@@ -4,6 +4,8 @@ import br.com.raiz.assistente.dto.AssistenteDto.Pergunta;
 import br.com.raiz.assistente.dto.AssistenteDto.Resposta;
 import br.com.raiz.dashboard.service.AmsDashboardService;
 import br.com.raiz.dashboard.service.AmsDashboardService.Consulta;
+import br.com.raiz.score.dto.AmsDto.Agregado;
+import br.com.raiz.score.dto.AmsDto.Linha;
 import br.com.raiz.score.dto.AmsDto.Painel;
 import br.com.raiz.score.dto.AmsDto.Pessoa;
 import br.com.raiz.usuario.service.SessaoService;
@@ -23,6 +25,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +36,23 @@ import java.util.concurrent.TimeUnit;
 /**
  * Assistente do dashboard. Monta o recorte com as MESMAS regras do painel AMS (AmsDashboardService) e envia ao
  * agente orquestrador (Python, REST) só o que o usuário pode ver: ids das pessoas do recorte e o resumo do AMS.
- * O orquestrador usa a LLM configurada nos agentes (Gemini por API ou Ollama local).
+ * O orquestrador usa a LLM configurada nos agentes (Claude por API, Gemini ou Ollama local).
+ *
+ * Modos (campo "modo"), que definem o que a IA pode responder:
+ *  - colaborador: os próprios dados + comparação ANÔNIMA com os colegas de área (médias, contagens, cursos e boas
+ *    práticas de quem tem AMS maior). Nenhum id, nome ou nota individual de colega vai no texto do prompt.
+ *  - gestor_proprio: o gestor no próprio dashboard individual (igual ao colaborador).
+ *  - gestor_colaborador: o gestor no dashboard de um colaborador da área: os dados dessa pessoa.
+ *  - gestor_equipe: o gestor no dashboard da equipe: médias da equipe + os dados do próprio gestor ("pessoal").
+ *    Para dados de uma pessoa específica, a IA orienta a abrir o dashboard dela.
+ *  - administrador / administrador_pessoa: recorte agregado, ou a pessoa selecionada no filtro.
  */
 @Service
 public class AssistenteService {
     private static final Logger log = LoggerFactory.getLogger(AssistenteService.class);
     private static final int TAMANHO_MAXIMO = 500;
+    /** Mínimo de colegas para mostrar uma média ou um grupo de referência sem permitir descobrir uma pessoa. */
+    static final int MINIMO_ANONIMO = 3;
     /** No máximo duas perguntas ao mesmo tempo (protege a cota da API e o Ollama local). */
     private final Semaphore vagas = new Semaphore(2);
     private final AmsDashboardService ams;
@@ -75,9 +89,59 @@ public class AssistenteService {
         corpo.put("pergunta", pergunta);
         corpo.put("usuario", Map.of("nome", u.nome(), "perfil", u.perfil()));
         corpo.put("periodo", periodo);
-        corpo.put("escopo", escopo(u.employeeId(), u.perfil(), pessoas, p));
+        Map<String, Object> escopo = escopo(u.employeeId(), u.perfil(), pessoas, p);
+        String modo = modo(u.perfil(), escopo, p);
+        corpo.put("modo", modo);
+        corpo.put("escopo", escopo);
         corpo.put("ams", resumoAms(painel, periodo));
+        if (modo.equals("gestor_equipe")) {           // a equipe e, à parte, os dados do próprio gestor
+            var proprio = new Consulta(u.perfil(), u.employeeId(), null, null, null, u.employeeId(), periodo, 0, 1, "", "ams");
+            corpo.put("pessoal", Map.of("employeeIds", List.of(u.employeeId()), "ams", resumoAms(ams.painel(proprio), periodo)));
+        }
+        if (modo.equals("colaborador") || modo.equals("gestor_proprio")) {
+            Map<String, Object> equipe = comparacaoAnonima(painel.resumo().nota(), ams.colegasDeArea(u.employeeId(), periodo));
+            if (equipe != null) corpo.put("equipe", equipe);
+        }
         return enviar(corpo);
+    }
+
+    static String modo(String perfil, Map<String, Object> escopo, Pergunta p) {
+        boolean pessoal = "pessoal".equals(escopo.get("tipo")), proprio = Boolean.TRUE.equals(escopo.get("proprio"));
+        return switch (perfil) {
+            case "colaborador" -> "colaborador";
+            case "gestor" -> pessoal ? (proprio ? "gestor_proprio" : "gestor_colaborador") : "gestor_equipe";
+            default -> pessoal && !proprio ? "administrador_pessoa" : "administrador";
+        };
+    }
+
+    /**
+     * Comparação com os colegas de área sem identificar ninguém: média e médias por dimensão dos colegas, a posição
+     * do usuário em relação à média e os ids do grupo de referência (colegas com AMS maior que o do usuário; sem nota,
+     * a metade de cima), que os agentes só usam
+     * para calcular médias e contar cursos. Com menos de MINIMO_ANONIMO colegas, não há comparação.
+     */
+    static Map<String, Object> comparacaoAnonima(Double minhaNota, List<Linha> colegas) {
+        if (colegas.size() < MINIMO_ANONIMO) return null;
+        Agregado media = AmsDashboardService.agregado(colegas);
+        Map<String, Object> e = new LinkedHashMap<>();
+        e.put("colegas", colegas.size());
+        Map<String, Object> a = new LinkedHashMap<>();
+        a.put("nota", media.validos() >= MINIMO_ANONIMO ? media.nota() : null);
+        a.put("validos", media.validos());
+        List<Map<String, Object>> dims = new ArrayList<>();
+        for (var d : media.dimensoes()) {
+            if (d.nota() == null || d.validos() < MINIMO_ANONIMO) continue;
+            dims.add(Map.of("nome", d.nome(), "nota", d.nota()));
+        }
+        a.put("dimensoes", dims);
+        e.put("ams", a);
+        List<Linha> comNota = colegas.stream().filter(l -> l.calculo().nota() != null)
+            .sorted(Comparator.comparing((Linha l) -> l.calculo().nota()).reversed()).toList();
+        List<Linha> referencia = minhaNota == null ? comNota.subList(0, (comNota.size() + 1) / 2)
+            : comNota.stream().filter(l -> l.calculo().nota() > minhaNota).toList();
+        e.put("referencia", referencia.size() >= MINIMO_ANONIMO ? referencia.stream().map(l -> l.pessoa().id()).toList() : List.of());
+        e.put("colegasIds", colegas.stream().map(l -> l.pessoa().id()).toList());
+        return e;
     }
 
     static Map<String, Object> escopo(String usuarioId, String perfil, List<Pessoa> pessoas, Pergunta p) {
@@ -87,6 +151,7 @@ public class AssistenteService {
             boolean proprio = pessoa.id().equals(usuarioId);
             e.put("tipo", "pessoal");
             e.put("proprio", proprio);
+            e.put("nome", pessoa.nome());
             e.put("descricao", proprio ? "seus dados" : "dados de " + pessoa.nome());
         } else {
             Pessoa primeira = pessoas.get(0);

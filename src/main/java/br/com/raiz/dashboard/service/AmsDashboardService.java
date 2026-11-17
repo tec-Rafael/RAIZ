@@ -66,6 +66,20 @@ public class AmsDashboardService {
                 p->p.empresa()+" · "+Objects.toString(p.departamento(),"Sem departamento")),destaque,pagina,distribuicao,
             "Média aritmética dos AMS disponíveis, com peso igual por pessoa. AI Literacy ausente usa zero no AMS e continua identificada como ausente. Confira a cobertura e as notas utilizadas na composição.");
     }
+    /** Linhas AMS dos colegas de área do usuário (mesma empresa e departamento, sem ele) no período.
+     *  Uso interno do assistente de IA: o colaborador nunca recebe essas linhas, só médias e contagens anônimas. */
+    public List<Linha> colegasDeArea(String usuarioId,int periodo){
+        List<Pessoa> pessoas=repository.pessoas();
+        Pessoa u=referencia(pessoas,usuarioId);
+        if(u.departmentId()==null)return List.of();
+        List<Periodo> periodos=DashboardService.periodos(dashboard.primeiraData());
+        DashboardService.selecionarPeriodo(periodos,periodo);
+        return batch.carregar(periodos.get(periodo-1)).stream()
+            .filter(l->!l.pessoa().id().equals(u.id())&&Objects.equals(l.pessoa().companyId(),u.companyId())
+                &&Objects.equals(l.pessoa().departmentId(),u.departmentId())).toList();
+    }
+    /** Agregado (média, cobertura e médias por dimensão) de um conjunto de linhas. */
+    public static Agregado agregado(List<Linha> linhas){return agregar(linhas);}
     /** Pessoas do recorte com as mesmas validações do painel (usado pelo assistente de IA). */
     public List<Pessoa> pessoasDaConsulta(Consulta q){return selecionar(filtros(q.perfil(),q.usuarioId()),q);}
     public static List<Pessoa> permitidas(List<Pessoa> pessoas,Pessoa u,String perfil){

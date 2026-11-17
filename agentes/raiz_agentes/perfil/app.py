@@ -12,6 +12,7 @@ import time
 import joblib
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException
+from pydantic import BaseModel, Field
 
 from .. import config
 from ..comum import Recorte, conexao, exigir_token
@@ -67,6 +68,29 @@ def saude():
 def treinar():
     _preparar(treinar=True)
     return {"metricas": _estado["modelo"].metricas}
+
+
+class Colegas(BaseModel):
+    """Pessoa e grupo de referência (colegas de área com AMS maior), já autorizados pelo Java."""
+    employee_id: str = Field(alias="employeeId", max_length=60)
+    referencia: list[str] = Field(default_factory=list, max_length=5000)
+    periodo: int = Field(ge=1, le=5)
+    model_config = {"populate_by_name": True}
+
+
+@app.post("/cursos_colegas", dependencies=[Depends(exigir_token)])
+def cursos_colegas(pedido: Colegas):
+    """Cursos e categorias mais concluídos pelos colegas de referência (só contagens, sem identificar ninguém),
+    e a distribuição de perfis de uso desse grupo."""
+    modelo, df, trein = _estado["modelo"], _estado["df"], _estado["treinos"]
+    if modelo is None:
+        raise HTTPException(503, "O modelo de perfis ainda está sendo preparado.")
+    r = treinamentos.cursos_dos_colegas(pedido.employee_id, pedido.referencia, trein)
+    grupo = df[(df.periodo == pedido.periodo) & df.employee_id.isin(set(pedido.referencia) - {pedido.employee_id})]
+    if len(grupo) >= 3:
+        contagem = grupo.perfil.value_counts()
+        r["perfis"] = [{"nome": PERFIS[p]["nome"], "pessoas": int(n)} for p, n in contagem.items() if n >= 2]
+    return r
 
 
 @app.post("/perfil", dependencies=[Depends(exigir_token)])
