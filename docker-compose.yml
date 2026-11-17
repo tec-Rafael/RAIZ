@@ -76,6 +76,7 @@ services:
       BANCO_URL: postgresql+psycopg2://root:root@postgres:5432/ai_usage
       LLM_PROVEDOR: ${LLM_PROVEDOR:-claude}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_WORKSPACE_ID: ${ANTHROPIC_WORKSPACE_ID:-}
       CLAUDE_MODELO: ${CLAUDE_MODELO:-claude-haiku-5-5}
       RAG_MODO: ${RAG_MODO:-completo}
       EMBEDDINGS_PROVEDOR: ${EMBEDDINGS_PROVEDOR:-local}

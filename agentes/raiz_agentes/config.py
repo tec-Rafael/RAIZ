@@ -10,7 +10,9 @@ BANCO_URL = _env("BANCO_URL", "postgresql+psycopg2://root:root@localhost:5433/ai
 # Provedor da LLM: "claude" (API da Anthropic), "gemini" (API do Google AI Studio) ou "ollama" (local).
 # Troca sem mexer no código.
 LLM_PROVEDOR = _env("LLM_PROVEDOR", "claude").lower()
-ANTHROPIC_API_KEY = _env("ANTHROPIC_API_KEY", "")
+ANTHROPIC_API_KEY = _env("ANTHROPIC_API_KEY", "").strip('"\'')
+# Só para chaves sem espaço de trabalho (escopo "Organização" no Console): id no formato wrkspc_...
+ANTHROPIC_WORKSPACE_ID = _env("ANTHROPIC_WORKSPACE_ID", "").strip('"\'')
 CLAUDE_MODELO = _env("CLAUDE_MODELO", "claude-haiku-5-5")
 ANTHROPIC_URL = _env("ANTHROPIC_URL", "https://api.anthropic.com").rstrip("/")
 ANTHROPIC_VERSION = _env("ANTHROPIC_VERSION", "2026-10-21")

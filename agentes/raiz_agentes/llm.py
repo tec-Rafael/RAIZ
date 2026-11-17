@@ -41,6 +41,8 @@ async def _claude(mensagens: list[dict]) -> str:
              "thinking": {"type": "disabled"}, "output_config": {"effort": "low"}}
     cabecalhos = {"x-api-key": config.ANTHROPIC_API_KEY, "anthropic-version": config.ANTHROPIC_VERSION,
                   "content-type": "application/json"}
+    if config.ANTHROPIC_WORKSPACE_ID:
+        cabecalhos["anthropic-workspace-id"] = config.ANTHROPIC_WORKSPACE_ID
     try:
         async with httpx.AsyncClient(timeout=config.LLM_TIMEOUT) as cliente:
             r = await cliente.post(config.ANTHROPIC_URL + "/v1/messages", headers=cabecalhos, json=corpo)

@@ -56,7 +56,7 @@
     }
     function mostrar(i) {
         modo = 'dicas'; atual = i; balao.classList.remove('rdResposta');
-        pontos.hidden = false; proxima.textContent = 'Próxima ›';
+        pontos.hidden = false; proxima.textContent = 'Próxima';
         pontos.replaceChildren(...lista.map((_, k) => { const s = document.createElement('span'); if (k === i) s.className = 'on'; return s; }));
         proxima.hidden = lista.length < 2;
         digitar(lista[i] || '');
