@@ -52,7 +52,6 @@
   opcoes($('Period'),e.periodos.map(p=>({id:p.id,nome:'P'+p.id+' · '+p.dias+' dias'})),e.periodo.id);
   $('Day').max=e.periodo.dias;$('Day').value=e.dia;$('DayLabel').textContent='Dia '+e.dia+' de '+e.periodo.dias;
   $('Date').textContent='P'+e.periodo.id+' · '+data(e.data);
-  $('Mode').textContent='Histórico simulado · '+(e.previa?'prévia sem recompensas':e.encerrado?'árvore guardada':'sua jornada');
   $('Coins').textContent=fmt(e.carteira.moedas);$('ShopCoins').textContent=fmt(e.carteira.moedas);$('FertilizerCount').textContent=e.carteira.adubos;
   const a=e.arvore;
   $('Partial').textContent=e.dia===e.periodo.dias?'do período':'parcial';
@@ -100,7 +99,7 @@
    if(resposta.passos.length){
     let saldo=antes.carteira.moedas;
     for(const p of resposta.passos){
-     saldo+=p.moedas;$('Coins').textContent=fmt(saldo);$('Date').textContent='P'+antes.periodo.id+' · '+data(p.data);$('Day').value=p.dia;$('DayLabel').textContent='Dia '+p.dia+' de '+antes.periodo.dias;
+     saldo+=p.moedas;$('Coins').textContent=fmt(saldo);$('ShopCoins').textContent=fmt(saldo);$('Date').textContent='P'+antes.periodo.id+' · '+data(p.data);$('Day').value=p.dia;$('DayLabel').textContent='Dia '+p.dia+' de '+antes.periodo.dias;
      saude(p.ams,p.nivel,p.registradas,p.aplicaveis);$('Status').textContent='Dia '+p.dia+': '+(p.moedas?'+'+p.moedas+' moedas':'Recompensa já registrada');
      await arvore(p.nivel,antes.arvore.estagio);if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)await esperar(180);
     }
