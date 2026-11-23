@@ -15,7 +15,7 @@
 	const cv = document.getElementById("canvasArvoreHome"), C = window.RaizAvatar;
 	if (!cv || !C) return;
 	const raiz = cv.parentElement;
-	raiz.style.touchAction = "none";   // o dedo arrasta o personagem em vez de rolar ou dar zoom na home
+	// A área do cenário captura o arraste, e os painéis mantêm a rolagem pelo CSS.
 	const FIG = 32, ALTURA = 0.30;
 	const PASSEIO = ["Que dia bonito para crescer!", "Será que a árvore está com sede?", "Hoje eu aprendo algo novo.",
 		"Esse jardim está ficando lindo.", "Já conferiu seus desafios?", "Um curso por dia, uma folha nova!",
@@ -105,11 +105,12 @@
 		const pes = chaoY() - av.alt;
 		return Math.abs(p.x - av.x) < 9 * z && p.y <= pes + 2 * z && p.y >= pes - 34 * z;
 	}
-	const CONTROLE = "button,input,select,textarea,label,.offcanvas,.gardenHud,.gardenFloatingActions,.gardenLeftActions,.gardenToast";
+	const CONTROLE = "a:not(#abrirTrilha),button,input,select,textarea,label,.offcanvas,.gardenHud,.gardenFloatingActions,.gardenLeftActions,.gardenToast";
 	raiz.addEventListener("pointerdown", function (e) {
-		if (e.button !== 0 || e.target.closest(CONTROLE)) return;
+		if (e.button !== 0 || pegar || e.target.closest(CONTROLE)) return;
 		const p = pontoCanvas(e); if (!acertou(p)) return;
 		e.preventDefault();
+		suprimirClique = true;
 		raiz.setPointerCapture(e.pointerId);
 		pegar = { x0: e.clientX, y0: e.clientY, moveu: false, p: p, t: performance.now(), vx: 0, vy: 0, vxAnt: 0 };
 	});
@@ -128,15 +129,16 @@
 	function largar() {
 		if (!pegar) return;
 		const g = pegar; pegar = null; raiz.style.cursor = "";
+		setTimeout(function () { suprimirClique = false; }, 0);
 		if (!g.moveu || av.modo !== "segurado") return;
-		suprimirClique = true; setTimeout(function () { suprimirClique = false; }, 0);
 		av.modo = "caindo"; av.vx = Math.max(-60 * z, Math.min(60 * z, g.vx)); av.vy = Math.max(-40 * z, Math.min(40 * z, g.vy));
 		av.reclamar = av.alt > 14 * z;   // de uma altura de ~metade do personagem para cima, o tombo rende reclamação
 		if (reduzir) { av.alt = 0; pousar(); }
 	}
 	raiz.addEventListener("pointerup", largar);
 	raiz.addEventListener("pointercancel", largar);
-	raiz.addEventListener("click", function (e) { if (suprimirClique) { e.preventDefault(); e.stopPropagation(); } }, true);
+	raiz.addEventListener("lostpointercapture", largar);
+	raiz.addEventListener("click", function (e) { if (suprimirClique && e.detail !== 0) { e.preventDefault(); e.stopPropagation(); } }, true);
 
 	function pousar() {
 		av.alt = 0; av.vx = av.vy = 0;

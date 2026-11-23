@@ -1,118 +1,14 @@
-<div class="landingPage">
-	<nav class="navbar navbar-expand-lg landingNavbar sticky-top">
-		<div class="container">
-			<a class="navbar-brand landingNavbar__brand" href="/">
-				<img src="/public/img/logo.png?v=2" alt="Logotipo RAIZ" class="landingNavbar__logo" width="56" height="56">
-			</a>
-
-			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNavbarCollapse"
-				aria-controls="landingNavbarCollapse" aria-expanded="false" aria-label="Abrir menu">
-				<span class="navbar-toggler-icon"></span>
-			</button>
-
-			<div class="collapse navbar-collapse" id="landingNavbarCollapse">
-				<ul class="navbar-nav mx-auto">
-					<li class="nav-item"><a class="nav-link" href="#hero">Início</a></li>
-					<li class="nav-item"><a class="nav-link" href="#ideia">O Projeto</a></li>
-					<li class="nav-item"><a class="nav-link" href="#dashboard">Dashboard</a></li>
-					<li class="nav-item"><a class="nav-link" href="#sobre">Sobre nós</a></li>
-				</ul>
-
-				<div class="d-flex gap-2">
-					<a href="/login" class="btn btn-outline-light btn-sm">Login</a>
-					<a href="/login" class="btn btn-sm landingBtnAdmin">Login Admin</a>
-				</div>
-			</div>
-		</div>
-	</nav>
-
-	<main>
-		<section id="hero" class="landingHero text-center">
-			<div class="container py-5">
-				<h1 class="display-4 fw-bold">Projeto RAIZ</h1>
-				<p class="lead landingHero__text mx-auto">
-					Imagine visualizar e ter uma governança maior sobre como o seu dinheiro tem sido gasto dentro da empresa.
-					Aqui nós oferecemos uma plataforma de governança que analisa a performance de seus funcionários com suas IAs.
-				</p>
-			</div>
-		</section>
-
-		<section id="ideia" class="landingSection">
-			<div class="container text-center">
-				<h2>O que é o Projeto RAIZ</h2>
-				<p class="landingSection__text mx-auto">
-					Além de acompanhar o uso de Inteligência Artificial na empresa, o RAIZ transforma esses dados em
-					indicadores de maturidade — o <strong>AI Maturity Score</strong> — cobrindo pessoas, tecnologia,
-					governança e negócio. Um sistema de gamificação baseado em <strong>AI Credits</strong> reconhece e
-					incentiva o uso eficiente, seguro e responsável da IA pelos times.
-				</p>
-			</div>
-		</section>
-
-		<section id="dashboard" class="landingSection landingSection--alt">
-			<div class="container text-center">
-				<h2>Veja como fica o seu dashboard</h2>
-
-				<!-- TODO: substituir pelo print/mockup real do dashboard -->
-				<div class="landingDashboardPlaceholder mx-auto">
-					<i class="bi bi-bar-chart-line landingDashboardPlaceholder__icon"></i>
-					<span>Print do dashboard aqui</span>
-				</div>
-			</div>
-		</section>
-
-		<section id="sobre" class="landingSection">
-			<div class="container text-center">
-				<h2>Sobre nós</h2>
-				<p class="landingSection__text mx-auto">
-					O RAIZ nasceu para resolver um problema real: empresas adotam Inteligência Artificial cada vez mais
-					rápido, mas raramente sabem medir como essa adoção está indo. Nossa missão é dar às organizações uma
-					visão clara e confiável da maturidade em IA — apoiando decisões mais estratégicas, a capacitação das
-					equipes e um uso mais responsável e eficiente da tecnologia.
-				</p>
-			</div>
-		</section>
-
-		<section id="cadastro" class="landingCta text-center">
-			<div class="container">
-				<h2>Pronto para dar o próximo passo?</h2>
-				<!-- TODO: definir a rota real de cadastro de empresa; o backend ainda não tem esse fluxo -->
-				<a href="#" class="btn btn-lg landingBtnCta">Cadastre sua empresa já</a>
-			</div>
-		</section>
-	</main>
-</div>
-
-<!-- GSAP: só carregado aqui na landing page (não no cabecalho.ejs global) para não pesar as outras telas. -->
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-<script>
-	(function () {
-		var reduzMovimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-		if (reduzMovimento || typeof gsap === "undefined") return;
-
-		gsap.registerPlugin(ScrollTrigger);
-
-		// Hero: entra assim que a página carrega.
-		gsap.timeline()
-			.from(".landingHero h1", { opacity: 0, y: 24, duration: 0.7, ease: "power2.out" })
-			.from(".landingHero__text", { opacity: 0, y: 16, duration: 0.6, ease: "power2.out" }, "-=0.35");
-
-		// Demais seções: revelam conforme o usuário rola a página.
-		document.querySelectorAll(".landingSection, .landingCta").forEach(function (secao) {
-			var alvos = secao.querySelectorAll(".container > *");
-
-			gsap.from(alvos, {
-				opacity: 0,
-				y: 30,
-				duration: 0.6,
-				ease: "power2.out",
-				stagger: 0.12,
-				scrollTrigger: {
-					trigger: secao,
-					start: "top 80%"
-				}
-			});
-		});
-	})();
-</script>
+<link rel="stylesheet" href="/public/css/apresentacao.css?v=1">
+<div class="raizLanding">
+<header class="lp-nav"><a class="lp-brand" href="/sobre" aria-label="RAIZ apresentação"><img src="/public/img/logo-branca.png?v=2" width="40" height="40" alt="">rAIz.</a><nav aria-label="Navegação da apresentação"><a href="#plataforma">Plataforma</a><a href="#jardim">Seu jardim</a><a href="#aprendizado">Aprendizado</a></nav><a class="lp-button lp-small" href="/login">Entrar <span aria-hidden="true">↗</span></a></header>
+<main>
+<section class="lp-hero" aria-labelledby="lp-title"><div class="lp-wrap lp-hero-grid"><div class="lp-intro"><p class="lp-eyebrow">INTELIGÊNCIA ARTIFICIAL. EVOLUÇÃO HUMANA.</p><h1 id="lp-title">Toda evolução<br>começa pela <em>raiz.</em></h1><p class="lp-lead">Entenda como a IA participa da sua rotina. Descubra onde melhorar, aprenda algo novo e veja o seu desenvolvimento ganhar vida.</p><div class="lp-actions"><a class="lp-button" href="/login">Cultivar minha evolução <span aria-hidden="true">↗</span></a><a class="lp-text-link" href="#plataforma">Conheça o RAIZ ↓</a></div><p class="lp-caption">Projeto acadêmico · experiência com dados simulados</p></div><div class="lp-landscape" role="img" aria-label="Árvore em pixel art numa clareira verde"><img class="lp-tree" src="/public/img/FramesArvore/hd_contorno/excelente/arvore_estagio_4.png" alt="" width="320" height="320"><span class="lp-tree-label">Pequenos passos. Novas raízes.</span></div></div></section>
+<section id="plataforma" class="lp-section lp-wrap"><div class="lp-section-head"><p class="lp-eyebrow">DO DADO AO DESENVOLVIMENTO</p><h2>Uma visão clara.<br>Mais espaço para crescer.</h2><p>O AI Maturity Score (AMS) reúne os sinais de maturidade no uso de IA. Explore notas, acompanhe períodos e encontre oportunidades de capacitação.</p></div><div class="lp-dimensions">
+<% for(const [icone,nome,texto] of [['shield-check','Segurança','Cuidado com a informação e acompanhamento dos incidentes.'],['diagram-3','Governança','Práticas e diretrizes para um uso responsável.'],['coin','FinOps','Eficiência de custos no uso das ferramentas de IA.'],['book','AI Literacy','Conhecimento que cresce com a capacitação.'],['code-slash','Delivery','Indicadores de entregas para profissionais de desenvolvimento.']]) { %>
+<article><i class="bi bi-<%= icone %>" aria-hidden="true"></i><h3><%= nome %></h3><p><%= texto %></p></article><% } %></div>
+<div class="lp-insight"><div><p class="lp-eyebrow">UM DASHBOARD, DIFERENTES PERSPECTIVAS</p><h3>Enxergue a trajetória inteira.</h3><p>Compare cinco períodos, filtre colaboradores e explore a composição de cada nota. O colaborador acompanha sua evolução, o gestor cuida de seu departamento e o administrador tem a visão completa.</p><a class="lp-text-link" href="/dashboard">Explorar o dashboard ↗</a></div><div class="lp-periods" aria-label="Quatro períodos de 90 dias e um de 66 dias"><% for(let i=1;i<=5;i++){ %><div><span>P<%= i %></span><div style="--altura:<%= [38,49,60,71,83][i-1] %>%"></div><small><%= i===5?'66':'90' %> dias</small></div><% } %><p>Janelas de análise · representação ilustrativa</p></div></div></section>
+<section id="jardim" class="lp-garden"><div class="lp-wrap"><div class="lp-section-head"><p class="lp-eyebrow">SEU PROGRESSO TEM VIDA</p><h2>Um jardim que conta<br>a sua história.</h2><p>A saúde da árvore acompanha o AMS. O adubo faz o crescimento acontecer, e cada dia percorrido no histórico rende moedas para cuidar do seu espaço.</p></div><div class="lp-stages"><% for(const [i,nome] of ['Semente','Broto','Árvore jovem','Árvore adulta'].entries()){ %><div><img src="/public/img/FramesArvore/hd_contorno/excelente/arvore_estagio_<%= i+1 %>.png" alt="<%= nome %> em pixel art" width="320" height="320"><span><%= nome %></span></div><% } %></div><div class="lp-garden-notes"><p><strong>Um cantinho com a sua cara.</strong> Flores, cogumelos, animais e enfeites da loja tornam o cenário mais acolhedor. Novos estágios liberam espaço para decorar.</p><p><strong>Evoluir também é compartilhar.</strong> Visite a floresta coletiva, acompanhe o ranking da empresa ou da área e celebre suas conquistas.</p></div></div></section>
+<section id="aprendizado" class="lp-section lp-wrap lp-learning"><div class="lp-learning-art" aria-hidden="true"><img src="/public/img/trilha/semente.png" alt=""><span>│</span><div><img src="/public/img/trilha/folha.png" alt=""><span>──</span><img src="/public/img/trilha/bolota.png" alt=""></div><span>│</span><img src="/public/img/trilha/broto.png" alt=""></div><div><p class="lp-eyebrow">CONHECIMENTO QUE CRIA RAÍZES</p><h2>Aprenda. Desbloqueie.<br>Floresça.</h2><p>Na árvore de habilidades, cada treinamento é um novo ramo. Conclua os cursos de um nível para abrir o próximo e fortalecer seu AI Literacy.</p><p>Os gestores podem ampliar a trilha com cursos para sua área. Aulas e perguntas de conclusão transformam o aprendizado em progresso registrado.</p><a href="/arvore" class="lp-text-link">Conhecer a árvore de habilidades ↗</a></div></section>
+<section class="lp-principle lp-wrap"><p class="lp-eyebrow">CRESCIMENTO COM CONTEXTO</p><h2>Pessoas no centro.<br>Dados para orientar.</h2><p>O AMS é um indicador de maturidade no uso de IA. As notas precisam ser lidas junto com a cobertura, o cargo e o período analisado. Consumo de tokens, sozinho, não mede produtividade.</p><p>O RAIZ nasceu como projeto acadêmico para aproximar análise, aprendizagem e gamificação. Esta demonstração utiliza dados simulados e acesso por perfil.</p></section>
+<section class="lp-cta"><div class="lp-wrap"><img src="/public/img/trilha/broto.png" alt="" width="48" height="48"><h2>Seu próximo passo<br>pode virar um novo broto.</h2><a href="/login" class="lp-button">Entrar no meu RAIZ ↗</a></div></section>
+</main><footer class="lp-footer lp-wrap"><a class="lp-brand" href="/sobre">rAIz.</a><p>Maturidade em IA. Crescimento contínuo.</p><a href="#lp-title">Voltar ao início ↑</a></footer></div>

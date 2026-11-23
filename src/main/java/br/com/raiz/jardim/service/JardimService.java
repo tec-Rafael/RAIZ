@@ -108,9 +108,10 @@ public class JardimService {
         String id=sessoes.atual().employeeId();
         var ativos=Arrays.stream(saldo.decoracao().split(",")).filter(i->!i.equals("nenhuma")).toList();
         if(!request.item().equals("nenhuma") && !ativos.contains(request.item())){
-            int estagio=estagio(repo.progresso(id,saldo.periodoAtual()).adubos());
-            if(ativos.size()>=limiteDecoracoes(estagio))
-                throw conflito("Limite de decoração deste estágio atingido.");
+            var progresso=repo.progresso(id,saldo.periodoAtual());
+            var nota=ams.minha(id,saldo.periodoAtual(),progresso.dia());
+            if(nota!=null && "baixo".equals(nota.nivel()))
+                throw conflito("Melhore a saúde da árvore para decorar o ambiente.");
         }
         if(!request.item().equals("nenhuma")&&!repo.itens(sessoes.atual().employeeId()).contains(request.item()))throw conflito("Adquira essa decoração antes de equipar.");
         repo.equipar(sessoes.atual().employeeId(),request.item());return resposta("Decoração atualizada.");

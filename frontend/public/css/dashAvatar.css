@@ -43,3 +43,12 @@
 .rdPensamentoBolha.rdPequena{left:-4px;bottom:0;width:5px;height:5px}
 @keyframes rdPensaPonto{50%{opacity:.25;transform:translateY(-2px)}}
 @media(prefers-reduced-motion:reduce){.rdPensamentoNuvem i{animation:none}}
+
+
+.rdHello{min-width:0;max-width:100%}
+.rdConversa{min-width:0}
+.rdHello canvas{flex-shrink:0}
+.rdPergunta button{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:40px;min-height:40px}
+.rdBubble p{overflow-wrap:anywhere}
+.rdBubble:not(.rdResposta) #rdFalaProxima::after{animation:none}
+@media(max-width:700px){.rdConversa{margin-bottom:10px;width:0;flex:1 1 0}.rdBubble{padding:10px 8px}.rdPergunta{padding-left:6px}}

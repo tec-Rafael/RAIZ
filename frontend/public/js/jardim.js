@@ -58,21 +58,17 @@
   saude(a.ams,a.nivel,a.registradas,a.aplicaveis);
   $('Status').textContent=e.previa?'Prévia histórica: rever datas não libera moedas nem altera o crescimento.':e.encerrado?'Árvore guardada. Você pode decorar, adubar ou zerar seu crescimento.':e.dia===0?'Comece avançando um dia ou uma semana do histórico.':e.dia===e.periodo.dias?'Período completo. Você ainda pode adubar antes de guardar a árvore.':'Dia '+e.dia+' salvo. Cada data rende moedas uma vez até você zerar o período.';
   renderLoja();renderColecao();controles();
-  if(motor)motor.decorar(e.carteira.decoracao.split(',').slice(0,limiteDecoracoes(e.arvore.estagio)).join(','));
- }
- function limiteDecoracoes(estagio){
-  return estagio===4?Infinity:estagio-1;
+  if(motor)motor.decorar(e.carteira.decoracao);
  }
  function renderLoja(){
   if(!estado)return;
-  const limite=limiteDecoracoes(estado.arvore.estagio);
-  const ativos=estado.carteira.decoracao.split(',').filter(id=>id!=='nenhuma');
-  const regra=limite===0?'A semente libera sua primeira decoração no estágio 2.':Number.isFinite(limite)?'Você pode usar '+limite+' decoração(ões) neste estágio.':'Sua árvore adulta pode usar todos os itens.';
+  const ambienteRuim=estado.arvore.nivel==='baixo';
+  const regra=ambienteRuim?'O ambiente está seco. Melhore a saúde da árvore para usar suas decorações.':'Combine suas decorações em qualquer estágio da árvore.';
   $('ShopItems').innerHTML='<p class="gardenShopRule">'+regra+'</p>'+estado.loja.map(item=>{
    const equipado=estado.carteira.decoracao.split(',').includes(item.id);
-   const bloqueado=item.adquirido && !equipado && ativos.length>=limite;
+   const bloqueado=item.adquirido && !equipado && ambienteRuim;
    const indisponivel=item.adquirido?(estado.previa||bloqueado):estado.carteira.moedas<item.preco;
-   return '<article class="gardenShopItem"><div class="gardenShopItemHead">'+(item.id==='adubo'?'<i class="bi bi-droplet" aria-hidden="true"></i>':'<img class="gardenItemPreview" src="/public/img/decoracoes/'+item.id+'.png" alt="">')+'<div><h3>'+esc(item.nome)+'</h3><p>'+esc(item.descricao)+'</p></div></div><footer><span>'+item.preco+' moedas'+(item.adquirido?' · adquirido':'')+'</span><div>'+(item.id==='adubo'?'<label class="visually-hidden" for="gardenShopQuantity">Quantidade de adubo</label><input id="gardenShopQuantity" type="number" min="1" max="20" value="1">':'')+'<button type="button" class="gardenButton '+(!item.adquirido?'gardenPrimary':'')+'" '+(item.adquirido?'data-equip':'data-buy')+'="'+item.id+'" data-indisponivel="'+indisponivel+'" '+(busy||playing||indisponivel?'disabled':'')+'>'+(item.adquirido?(estado.previa?'Prévia':equipado?'Retirar':bloqueado?'Limite do estágio':'Decorar'):'Comprar')+'</button></div></footer></article>';
+   return '<article class="gardenShopItem"><div class="gardenShopItemHead">'+(item.id==='adubo'?'<i class="bi bi-droplet" aria-hidden="true"></i>':'<img class="gardenItemPreview" src="/public/img/decoracoes/'+item.id+'.png" alt="">')+'<div><h3>'+esc(item.nome)+'</h3><p>'+esc(item.descricao)+'</p></div></div><footer><span>'+item.preco+' moedas'+(item.adquirido?' · adquirido':'')+'</span><div>'+(item.id==='adubo'?'<label class="visually-hidden" for="gardenShopQuantity">Quantidade de adubo</label><input id="gardenShopQuantity" type="number" min="1" max="20" value="1">':'')+'<button type="button" class="gardenButton '+(!item.adquirido?'gardenPrimary':'')+'" '+(item.adquirido?'data-equip':'data-buy')+'="'+item.id+'" data-indisponivel="'+indisponivel+'" '+(busy||playing||indisponivel?'disabled':'')+'>'+(item.adquirido?(estado.previa?'Prévia':equipado?'Retirar':bloqueado?'Ambiente seco':'Decorar'):'Comprar')+'</button></div></footer></article>';
   }).join('')+(estado.carteira.decoracao!=='nenhuma'?'<button class="gardenTextButton" type="button" data-equip="nenhuma">Retirar decoração</button>':'');
  }
  function renderColecao(){
@@ -107,7 +103,7 @@
    let e=resposta.estado;
    if(rota!=='zerar'&&rota!=='adubar'&&antes.previa)e=await api('estado?'+new URLSearchParams({periodo:antes.periodo.id,dia:antes.dia}));
    const antigas=new Set(antes.conquistas.filter(c=>c.conquistada).map(c=>c.codigo));
-   render(e);if(rota==='adubar')motor.adubar();await arvore(e.arvore.nivel,e.arvore.estagio);
+   render(e);await arvore(e.arvore.nivel,e.arvore.estagio);
    const novas=e.conquistas.filter(c=>c.conquistada&&!antigas.has(c.codigo));
    toast(resposta.mensagem+(novas.length?' Conquista: '+novas.map(c=>c.nome).join(', ')+'.':''));
    if($('Ranking').classList.contains('show'))carregarRanking();return true;

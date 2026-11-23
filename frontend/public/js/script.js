@@ -30,7 +30,7 @@ async function realizarLoginUsuario() {
             alert(resposta.status === 401 ? 'E-mail ou senha inválidos.' : resposta.status === 403 ? 'Acesso não permitido para esta conta.' : 'Não foi possível entrar. Verifique se a API está disponível.');
             return;
         }
-        window.location.assign('/dashboard');
+        window.location.assign('/perfil');
     } catch (erro) {
         alert('Não foi possível comunicar com o servidor. Tente novamente.');
     } finally {

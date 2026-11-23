@@ -27,12 +27,8 @@ const contas=require('./contas-demo.json');
   }
   e=await post('equipar',{item:'nenhuma',versao:e.carteira.versao});
   e=await post('equipar',{item:'flores',versao:e.carteira.versao});
-  if(e.arvore.estagio===2){
-   await post('equipar',{item:'pedras',versao:e.carteira.versao},409);
-   e=await post('equipar',{item:'flores',versao:e.carteira.versao});
-  }
   e=await post('equipar',{item:'pedras',versao:e.carteira.versao});
-  assert.deepEqual(e.carteira.decoracao.split(',').sort(),e.arvore.estagio===2?['pedras']:['flores','pedras']);
+  assert.deepEqual(e.carteira.decoracao.split(',').sort(),['flores','pedras']);
   await post('adubar',{periodo,quantidade:17,versao:e.carteira.versao},400);
   console.log(JSON.stringify({passed:true,periodo:e.periodo.id,dia:e.dia,ams:e.arvore.ams,estagio:e.arvore.estagio,decoracoes:e.carteira.decoracao,moedas:e.carteira.moedas},null,2));
  }finally{await logout(s.cookie);}

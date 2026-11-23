@@ -29,7 +29,11 @@
         BASEY=(rect.height*.94-(rect.height-H*scale))/scale-148*K;
         VIS_W=rect.width/scale;VIS_H=rect.height/scale;
     }
-    ajustarLayout();window.addEventListener('resize',ajustarLayout);
+    ajustarLayout();
+    window.addEventListener('resize',()=>{
+        ajustarLayout();
+        if(carregado)desenhar();
+    });
 	const reduzirMovimento = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 	cv.width = W; cv.height = H; ctx.imageSmoothingEnabled = false;
 
@@ -120,13 +124,12 @@
 	function iniciarProxima() {
 		atual = fila.shift() || null;
 		if (!atual) { clearTimeout(timerAnimacao); if (resolverAnimacao) { const resolver=resolverAnimacao; resolverAnimacao=null; resolver(); } return; }
-		atual.t = 0; atual.p = 0; atual.bp = 0; atual.pulo = 1; atual.fase = atual.tipo === "crescer" ? (avatarAtivo() ? "rega" : "agua") : "anim";
+		atual.t = 0; atual.p = 0; atual.bp = 0; atual.pulo = 1; atual.fase = atual.tipo === "crescer" ? (avatarAtivo() ? "rega" : "anim") : "anim";
 		if (atual.tipo === "nivel") {
 			atual.melhora = NIVEIS.indexOf(atual.para) > NIVEIS.indexOf(atual.de);
 			estado.nivel = atual.para; // o clima já passa a ser o do nível novo
 			if (!atual.melhora) for (let i = 0; i < 14; i++) parts.push({ x: BASEX + (50 + Math.random() * 60) * K, y: BASEY + (40 + Math.random() * 50) * K, vx: (Math.random() - 0.5) * 60, vy: 60 + Math.random() * 80, g: 120, cor: ["#6b5a4b", "#4a3d34", "#8a7a60"][Math.random() * 3 | 0], z: K, vida: 2.5, folha: true });
 		}
-		if (atual.fase === "agua") gotas(atual.de);
 		if (atual.fase === "rega") {
 			const passo = atual;
 			window.raizAvatarHome.regar().then(function () { if (atual === passo && passo.fase === "rega") { passo.fase = "anim"; passo.t = 0; } });
@@ -145,7 +148,6 @@
 			if (!a.melhora && Math.random() < dt * 18) parts.push({ x: BASEX + (30 + Math.random() * 100) * K, y: BASEY + (20 + a.p * 120) * K, vx: (Math.random() - 0.5) * 40, vy: 80 + Math.random() * 60, cor: "rgba(40,36,48,.8)", z: K, vida: 1.2 });
 			if (a.t > 1.95 && a.fase === "anim") { a.fase = "pulo"; a.pulo = 0; if (a.melhora) brilhos(); }
 		} else if (a.tipo === "crescer") {
-			if (a.fase === "agua" && a.t > 0.75) { a.fase = "anim"; a.t = 0; }
 			if (a.fase === "anim") { const x = Math.min(1, a.t / 1.5); a.p = suave(x) * 1.05; if (x >= 1) { a.fase = "pulo"; a.t = 0; a.pulo = 0; estado.estagio = a.para; brilhos(); } }
 		} else { // encolher
 			if (a.fase === "anim") { const x = Math.min(1, a.t / 1.3); a.p = suave(x) * 1.05; if (x >= 1) { a.fase = "pulo"; a.t = 0; a.pulo = 0; estado.estagio = a.para; } }
@@ -182,7 +184,7 @@
         if(visualEstagio!==estado.estagio){visualEstagio=estado.estagio;ajustarLayout();}
 		const a = atual, e = estado.estagio - 1;
 		const pulo = 1;   // sem o "pulo" de escala (decisão do Matteus)
-		if (!a || a.fase === "agua" || a.fase === "rega" || a.fase === "pulo") sx.putImageData(SPR(estado.nivel)[e], 0, 0);
+		if (!a || a.fase === "rega" || a.fase === "pulo") sx.putImageData(SPR(estado.nivel)[e], 0, 0);
 		else if (a.tipo === "nivel") misturar(SPR(a.de)[e].data, SPR(a.para)[e].data, a.melhora ? T2_SOBE : T2_DESCE, a.p, a.melhora ? [60, 80, 30] : [-40, -40, -30], sprOut.data);
 		else misturar(SPR(estado.nivel)[a.de - 1].data, SPR(estado.nivel)[a.para - 1].data, a.tipo === "crescer" ? T2_SOBE : T2_DESCE, a.p, a.tipo === "crescer" ? [70, 70, 40] : [-35, -35, -20], sprOut.data);
 		if (a && a.fase === "anim") sx.putImageData(sprOut, 0, 0);
@@ -196,19 +198,17 @@
 		desenharFundo(); desenharArvore(); desenharDecoracoes();
 		if (window.raizAvatarHome) window.raizAvatarHome.desenhar(ctx, { W: W, chao: BASEY + 148 * K, visivelH: VIS_H, visivelW: VIS_W, K: K });
 		for (const q of parts) {
-			if (q.pisca && Math.random() < 0.25) continue;
+			ctx.globalAlpha = q.pisca ? 0.65 + 0.35 * Math.sin(q.vida * 3) : 1;
 			if (q.chuva) { ctx.fillStyle = q.cor; ctx.fillRect(Math.round(q.x / 4) * 4, Math.round(q.y / 4) * 4, 4, 20); continue; }
 			px(q.x, q.y, q.cor, q.z);
 			if (q.folha) px(q.x + q.z, q.y + q.z, q.cor, q.z);
 			if (q.gota) px(q.x, q.y - q.z, q.cor, q.z);
 		}
+		ctx.globalAlpha = 1;
 		if (relampago > 0) { ctx.fillStyle = "rgba(225,222,255," + relampago + ")"; ctx.fillRect(0, 0, W, H); }
 	}
 
 	// ------------------------------------------------------------ partículas
-	function gotas(estagioDe) {
-		for (let i = 0; i < 7; i++) parts.push({ x: BASEX + (80 + (Math.random() - 0.5) * 26) * K, y: BASEY + (estagioDe >= 3 ? 40 : 95) * K - Math.random() * 120, vx: 0, vy: 500 + Math.random() * 200, cor: "#9fd8f0", z: K, gota: true, ateY: BASEY + 138 * K, vida: 3 });
-	}
 	function brilhos() {
 		for (let i = 0; i < 26; i++) {
 			const a = Math.random() * Math.PI * 2, r = 20 + Math.random() * 60;
@@ -242,17 +242,19 @@
 	let ultimo = performance.now();
 	function loop(agora) {
 		const decorrido=Math.max(0,(agora-ultimo)/1000),dt=Math.min(0.05,decorrido);ultimo=agora;
-		avancar(Math.min(3,decorrido)); atualizarParticulas(dt); desenhar();
+		if (!document.hidden) { avancar(dt); atualizarParticulas(dt); desenhar(); }
 		requestAnimationFrame(loop);
 	}
 
     function desenharDecoracoes() {
+        if(estado.nivel==='baixo')return;
         const ground=BASEY+148*K;
         const scale=Math.max(cv.clientWidth/W,cv.clientHeight/H);
         const unit=Math.min(5,cv.clientWidth/(150*scale));
         // As posições foram pensadas para a árvore antiga; com a árvore ~42% maior, o x se afasta do tronco na mesma proporção.
         function item(nome,x,y=0,size=16){const img=decorAssets[nome];if(img)ctx.drawImage(img,W/2+x*AFASTAR*unit,ground+(y-size)*unit,size*unit,size*unit);}
         for(const nome of decoracao){
+            if (!decorAssets[nome]) continue;
             if(nome==='flores')for(const x of [-90,-65,45,70])item(nome,x,5);
             if(nome==='pedras')for(let i=0;i<4;i++)item(nome,-8,20+i*15);
             if(nome==='cogumelos'){item(nome,-50,3);item(nome,36,8);}
@@ -294,8 +296,7 @@
     }
     window.raizArvoreHome = {
         irPara, estado, pronto,
-        decorar(item) { decoracao=String(item||'').split(',').filter(x=>DECORACOES.includes(x)); if (reduzirMovimento && carregado) desenhar(); },
-        adubar() { if(!reduzirMovimento)gotas(estado.estagio); }
+        decorar(item) { decoracao=String(item||'').split(',').filter(x=>DECORACOES.includes(x)); if (reduzirMovimento && carregado) desenhar(); }
     };
     carregar().then(function () {
         estado.nivel=normalizarNivel(cv.dataset.nivel);estado.estagio=normalizarEstagio(cv.dataset.estagio);

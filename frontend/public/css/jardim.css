@@ -49,3 +49,23 @@
 #gardenShop .gardenItemPreview{image-rendering:pixelated;background:#f1e8d3;border-radius:8px;object-fit:contain}
 .gardenShopRule{font-size:.85rem;color:#665444}
 @media(max-width:700px){.gardenLeftActions{left:max(12px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top))}}
+
+
+.raizGarden{height:100dvh;min-height:100dvh}
+.gardenFloatingButton{line-height:1;flex-shrink:0}
+.gardenFloatingButton .bi{display:block;line-height:1}
+.gardenCalendarActions,.gardenCareActions,.gardenShopItem footer{flex-wrap:wrap}
+.gardenShopItemHead>div,.gardenCare>div{min-width:0;overflow-wrap:anywhere}
+.gardenShopItem footer>div{flex-wrap:wrap;justify-content:flex-end}
+.raizGarden .gardenDrawer{max-width:100vw}
+.gardenDrawer .offcanvas-body{min-height:0;overscroll-behavior:contain;touch-action:pan-y pinch-zoom}
+.gardenButton{text-align:center}
+@media(max-width:380px){.gardenDrawer .offcanvas-body{padding:16px}.gardenTimelineControls{flex-wrap:wrap;gap:12px}.gardenTimelineControls>label:first-child,.gardenDayControl{width:100%;flex-basis:100%}.gardenShopItem footer>div{margin-left:auto}.gardenCareActions{gap:8px}}
+.raizGarden{touch-action:none}
+.raizGarden:has(.offcanvas.show),.raizGarden:has(.offcanvas.showing){touch-action:pan-y pinch-zoom}
+.gardenLeftActions .gardenFloatingButton{box-sizing:border-box;line-height:1}
+.gardenLeftActions .gardenFloatingButton .bi{display:flex;align-items:center;justify-content:center;width:1em;height:1em;line-height:1}
+.gardenLeftActions .gardenFloatingButton .bi::before{display:block;line-height:1;vertical-align:0}
+.gardenLeftActions .gardenFloatingButton{position:relative;display:flex;align-items:center;justify-content:center;padding:0}
+.gardenMenuIcon{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:22px;height:18px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+.gardenMenuIcon>span{display:block;width:100%;height:2px;background:currentColor;border-radius:1px}

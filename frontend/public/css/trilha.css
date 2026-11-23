@@ -12,3 +12,13 @@
 .tr-no img{box-sizing:border-box;width:58px;height:58px;padding:6px;background:#122c34;border:3px solid #ffbf4b;box-shadow:inset 0 0 0 2px #785020,2px 3px #704722}
 .tr-no:disabled img{filter:saturate(.65);border-color:#a98441}.tr-no:hover:enabled img,.tr-no:focus-visible img{background:#315044;border-color:#fff1ab}
 .tr-no strong,.tr-no small{background:transparent;text-shadow:0 1px 2px #000;max-width:96%;padding:0 .25rem;line-height:1.2}.tr-no strong{font-size:clamp(.74rem,2.1vw,.95rem)}.tr-no small{font-size:.7rem}.tr-premios{margin-top:2rem}.tr-metas{margin-top:.8rem}.tr-meta{background:none;border:0;border-left:2px solid #b89652}.tr-links{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:-1}
+
+
+.trilha form button,.tr-fechar{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+.tr-fechar{min-width:44px}
+.trilha dialog{box-sizing:border-box;max-width:calc(100vw - 24px)}
+.trilha .tr-op{overflow-wrap:anywhere}.trilha .tr-op input{flex-shrink:0}
+@media(max-width:480px){.tr-no,.tr-no:disabled,.tr-no:hover:enabled,.tr-no:focus-visible{width:50%}.tr-pagina{padding-top:4.5rem}.trilha h1{overflow-wrap:anywhere}}
+.tr-voltar{padding:0;line-height:1;box-sizing:border-box}
+.tr-voltar .bi{display:flex;align-items:center;justify-content:center;width:1em;height:1em;line-height:1}
+.tr-voltar .bi::before{display:block;line-height:1;vertical-align:0}

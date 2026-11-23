@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="/public/css/dashboard.css?v=nav3"><link rel="stylesheet" href="/public/css/cadastrarCurso.css">
+<link rel="stylesheet" href="/public/css/dashboard.css?v=visual18"><link rel="stylesheet" href="/public/css/cadastrarCurso.css">
 <div class="raizDash"><%- include('../comum/sidebar',{pagina:'cursos'}) %><main class="rdMain cadastroCurso"><a href="/arvore">← Árvore de habilidades</a><h1>Cadastrar curso</h1>
 <% const niveis=[...new Set(cursos.map(c=>c.nivel))]; %>
 <form data-rota="/api/arvore/cursos"><label>Nível<select name="nivel"><% for(const n of [...niveis,niveis.length+1]){ %><option><%= n %></option><% } %></select></label>

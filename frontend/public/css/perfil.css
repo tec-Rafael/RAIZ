@@ -69,3 +69,9 @@
 @media(max-width:480px){.perfilAiGrid,.perfilUnusedGrid{grid-template-columns:1fr}.perfilAiFeatured{grid-column:auto}.perfilDetails{grid-template-columns:1fr}.perfilIdentity .rdBadge{margin-left:0}.perfilIdentityText{flex-basis:calc(100% - 80px)}.perfilAiHighlight{font-size:9px}.perfilSummary strong{font-size:20px}.perfilSummary>div{padding:18px 15px}.perfilLogout{min-height:44px}.perfilStatusRow{align-items:flex-start;flex-direction:column}}
 @media(prefers-reduced-motion:reduce){.perfilAiSkeleton{animation:none}}
 @media(max-width:380px){.perfilPage .rdBrand>span{display:none}.perfilPage .rdSidebar{flex-wrap:nowrap}}
+
+
+.perfilIdentityText,.perfilConsumptionHead>div{min-width:0;overflow-wrap:anywhere}
+.perfilHeader,.perfilConsumptionHead{gap:12px;flex-wrap:wrap}
+.perfilIdentityText p,.perfilDetails dd{overflow-wrap:anywhere}
+@media(max-width:380px){.perfilSummary{grid-template-columns:minmax(0,1fr)}.perfilSummary>div{grid-column:auto;border-left:0}.perfilUnusedItem{flex-wrap:wrap}}

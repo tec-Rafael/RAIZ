@@ -997,3 +997,12 @@
         }
     }
 
+
+
+.loginSplit{width:100%;height:100dvh;grid-template-columns:minmax(0,65fr) minmax(0,35fr)}
+.loginSplit__painel{min-width:0;align-items:safe center}
+.loginSplit__conteudo{min-width:0;overflow-wrap:anywhere}
+.loginSplit__linhaSenha{flex-wrap:wrap;gap:8px}
+.loginSplit__form .btn{justify-content:center;text-align:center}
+@media(max-width:1000px) and (min-width:768px){.loginSplit{grid-template-columns:minmax(0,1fr) minmax(340px,1fr)}}
+@media(max-width:767px){.loginSplit{height:auto;min-height:100dvh;grid-template-columns:minmax(0,1fr);grid-template-rows:42svh auto}}
